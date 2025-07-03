@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, CameraOff, Mic, MicOff, Users, Clock, Circle, Square, Settings, Send, Calendar } from 'lucide-react';
+import { Camera, CameraOff, Mic, MicOff, Users, Clock, Circle, Square, Settings, Send, Calendar, MessageCircle } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
@@ -15,11 +15,20 @@ interface LiveSession {
   meeting_link?: string;
 }
 
+interface ChatMessage {
+  id: string;
+  username: string;
+  message: string;
+  timestamp: Date;
+  isHost?: boolean;
+}
+
 const LiveVideo: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const autoStartTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   const [isStreaming, setIsStreaming] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -34,6 +43,12 @@ const LiveVideo: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [scheduledSessions, setScheduledSessions] = useState<LiveSession[]>([]);
   const [nextSessionCountdown, setNextSessionCountdown] = useState<string>('');
+  
+  // Chat state
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [username, setUsername] = useState('');
 
   // Live session setup form
   const [liveSetup, setLiveSetup] = useState({
@@ -57,13 +72,18 @@ const LiveVideo: React.FC = () => {
       updateCountdowns();
     }, 1000); // Check every second
 
+    // Auto-scroll chat to bottom when new messages arrive
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+
     return () => {
       clearInterval(interval);
       if (autoStartTimerRef.current) {
         clearTimeout(autoStartTimerRef.current);
       }
     };
-  }, []);
+  }, [chatMessages]);
 
   const checkAuth = async () => {
     if (!isSupabaseReady || !supabase) return;
@@ -71,6 +91,9 @@ const LiveVideo: React.FC = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      if (session?.user?.email) {
+        setUsername(session.user.email.split('@')[0]);
+      }
     } catch (error) {
       console.error('Error checking auth:', error);
     }
@@ -192,6 +215,64 @@ const LiveVideo: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [isRecording]);
+
+  // Simulate chat messages from viewers
+  useEffect(() => {
+    if (isLive && currentSession) {
+      const interval = setInterval(() => {
+        const sampleMessages = [
+          "Great session! 👏",
+          "Thank you for the update",
+          "When is the next meeting?",
+          "Jai Hind! 🇮🇳",
+          "Very informative",
+          "Keep up the good work",
+          "Proud to be part of BJP family",
+          "Excellent leadership",
+          "Looking forward to more sessions"
+        ];
+        
+        const sampleUsernames = [
+          "RameshSharma", "PriyaGupta", "VikasKumar", "SunitaVerma", 
+          "AjayThakur", "MeeraJoshi", "RajeshPatel", "KavitaSingh"
+        ];
+
+        // Add a random message every 10-30 seconds
+        if (Math.random() < 0.1) {
+          const randomMessage = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
+          const randomUsername = sampleUsernames[Math.floor(Math.random() * sampleUsernames.length)];
+          
+          addChatMessage(randomUsername, randomMessage);
+        }
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLive, currentSession]);
+
+  const addChatMessage = (username: string, message: string, isHost = false) => {
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      username,
+      message,
+      timestamp: new Date(),
+      isHost
+    };
+    
+    setChatMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newMessage.trim()) return;
+    
+    const displayName = username || 'Anonymous';
+    const isHost = currentSession?.host_name === displayName || user?.email?.includes('admin');
+    
+    addChatMessage(displayName, newMessage.trim(), isHost);
+    setNewMessage('');
+  };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -403,6 +484,7 @@ const LiveVideo: React.FC = () => {
         setIsStreaming(true);
         setIsLive(true);
         setError('');
+        setShowChat(true); // Show chat when going live
         
         // Initialize viewer count
         const initialViewers = Math.floor(Math.random() * 50) + 10;
@@ -413,6 +495,9 @@ const LiveVideo: React.FC = () => {
 
         // Post to social media about going live
         await postLiveAnnouncement(session);
+
+        // Add welcome message to chat
+        addChatMessage('System', `Welcome to ${session.title}! Chat is now active.`);
       }
     } catch (err) {
       setError('Failed to access camera. Please ensure camera permissions are granted.');
@@ -505,6 +590,7 @@ ${session.meeting_link ? `\nJoin: ${session.meeting_link}` : ''}
       videoRef.current.srcObject = null;
       setIsStreaming(false);
       setIsLive(false);
+      setShowChat(false); // Hide chat when stopping
       
       // Stop recording if active
       if (isRecording) {
@@ -518,6 +604,7 @@ ${session.meeting_link ? `\nJoin: ${session.meeting_link}` : ''}
       }
 
       setCurrentSession(null);
+      setChatMessages([]); // Clear chat messages
     }
   };
 
@@ -572,6 +659,13 @@ Duration: ${formatDuration(recordingDuration)}
       // Start countdown for immediate live
       startCountdown();
     }
+  };
+
+  const formatChatTime = (timestamp: Date) => {
+    return timestamp.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   useEffect(() => {
@@ -868,126 +962,220 @@ Duration: ${formatDuration(recordingDuration)}
         </div>
       )}
 
-      <div className="relative">
-        {/* Live indicator and viewer count */}
-        {isLive && currentSession && (
-          <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
-            <div className="bg-red-500 text-white px-3 py-1 rounded-full flex items-center">
-              <Circle size={8} className="mr-2 fill-current animate-pulse" />
-              LIVE
-            </div>
-            <div className="bg-black/70 text-white px-3 py-1 rounded-full flex items-center">
-              <Users size={16} className="mr-2" />
-              {viewerCount.toLocaleString()}
-            </div>
-          </div>
-        )}
-
-        {/* Session info */}
-        {isLive && currentSession && (
-          <div className="absolute top-4 right-4 z-10 bg-black/70 text-white px-3 py-1 rounded-lg max-w-xs">
-            <p className="font-semibold text-sm">{currentSession.title}</p>
-            <p className="text-xs">Host: {currentSession.host_name}</p>
-          </div>
-        )}
-
-        {/* Recording indicator */}
-        {isRecording && (
-          <div className="absolute top-16 right-4 z-10">
-            <div className="bg-red-600 text-white px-3 py-1 rounded-full flex items-center">
-              <Circle size={8} className="mr-2 fill-current animate-pulse" />
-              REC {formatDuration(recordingDuration)}
-            </div>
-          </div>
-        )}
-
-        {/* Countdown overlay */}
-        {countdown !== null && (
-          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20">
-            <div className="text-center">
-              <div className="text-8xl font-bold text-white mb-4 animate-pulse">
-                {countdown}
+      <div className="flex gap-6">
+        {/* Video Section */}
+        <div className={`${showChat ? 'flex-1' : 'w-full'} relative`}>
+          {/* Live indicator and viewer count */}
+          {isLive && currentSession && (
+            <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
+              <div className="bg-red-500 text-white px-3 py-1 rounded-full flex items-center">
+                <Circle size={8} className="mr-2 fill-current animate-pulse" />
+                LIVE
               </div>
-              <p className="text-white text-xl">Going live in...</p>
+              <div className="bg-black/70 text-white px-3 py-1 rounded-full flex items-center">
+                <Users size={16} className="mr-2" />
+                {viewerCount.toLocaleString()}
+              </div>
             </div>
-          </div>
-        )}
-
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted={true}
-          className={`w-full aspect-video rounded-lg bg-gray-900 ${!isStreaming ? 'hidden' : ''}`}
-        />
-        
-        {!isStreaming && (
-          <div className="w-full aspect-video rounded-lg bg-gray-900 flex items-center justify-center">
-            <div className="text-center text-white">
-              <CameraOff size={48} className="mx-auto mb-4" />
-              <p className="text-lg mb-4">Ready to go live?</p>
-              {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
-            </div>
-          </div>
-        )}
-
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
-          {!isStreaming ? (
-            <>
-              <button
-                onClick={() => setShowLiveSetup(true)}
-                disabled={countdown !== null}
-                className="bg-gray-600 hover:bg-gray-700 text-white p-4 rounded-full transition-colors disabled:opacity-50"
-                title="Setup live session"
-              >
-                <Settings size={24} />
-              </button>
-              <button
-                onClick={startCountdown}
-                disabled={countdown !== null}
-                className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-3 rounded-full transition-colors flex items-center disabled:opacity-50"
-                title="Start live stream"
-              >
-                <Camera size={24} className="mr-2" />
-                Go Live
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={stopStream}
-                className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full transition-colors"
-                title="Stop live stream"
-              >
-                <Square size={24} />
-              </button>
-              
-              <button
-                onClick={toggleMute}
-                className={`p-4 rounded-full transition-colors ${
-                  isMuted 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : 'bg-bjp-saffron hover:bg-bjp-darkSaffron'
-                } text-white`}
-                title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
-              >
-                {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-              </button>
-
-              <button
-                onClick={isRecording ? stopRecording : startRecording}
-                className={`p-4 rounded-full transition-colors ${
-                  isRecording 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : 'bg-green-500 hover:bg-green-600'
-                } text-white`}
-                title={isRecording ? 'Stop recording' : 'Start recording'}
-              >
-                {isRecording ? <Square size={24} /> : <Circle size={24} />}
-              </button>
-            </>
           )}
+
+          {/* Session info */}
+          {isLive && currentSession && (
+            <div className="absolute top-4 right-4 z-10 bg-black/70 text-white px-3 py-1 rounded-lg max-w-xs">
+              <p className="font-semibold text-sm">{currentSession.title}</p>
+              <p className="text-xs">Host: {currentSession.host_name}</p>
+            </div>
+          )}
+
+          {/* Recording indicator */}
+          {isRecording && (
+            <div className="absolute top-16 right-4 z-10">
+              <div className="bg-red-600 text-white px-3 py-1 rounded-full flex items-center">
+                <Circle size={8} className="mr-2 fill-current animate-pulse" />
+                REC {formatDuration(recordingDuration)}
+              </div>
+            </div>
+          )}
+
+          {/* Countdown overlay */}
+          {countdown !== null && (
+            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-20">
+              <div className="text-center">
+                <div className="text-8xl font-bold text-white mb-4 animate-pulse">
+                  {countdown}
+                </div>
+                <p className="text-white text-xl">Going live in...</p>
+              </div>
+            </div>
+          )}
+
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted={true}
+            className={`w-full aspect-video rounded-lg bg-gray-900 ${!isStreaming ? 'hidden' : ''}`}
+          />
+          
+          {!isStreaming && (
+            <div className="w-full aspect-video rounded-lg bg-gray-900 flex items-center justify-center">
+              <div className="text-center text-white">
+                <CameraOff size={48} className="mx-auto mb-4" />
+                <p className="text-lg mb-4">Ready to go live?</p>
+                {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+              </div>
+            </div>
+          )}
+
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
+            {!isStreaming ? (
+              <>
+                <button
+                  onClick={() => setShowLiveSetup(true)}
+                  disabled={countdown !== null}
+                  className="bg-gray-600 hover:bg-gray-700 text-white p-4 rounded-full transition-colors disabled:opacity-50"
+                  title="Setup live session"
+                >
+                  <Settings size={24} />
+                </button>
+                <button
+                  onClick={startCountdown}
+                  disabled={countdown !== null}
+                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-3 rounded-full transition-colors flex items-center disabled:opacity-50"
+                  title="Start live stream"
+                >
+                  <Camera size={24} className="mr-2" />
+                  Go Live
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={stopStream}
+                  className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-full transition-colors"
+                  title="Stop live stream"
+                >
+                  <Square size={24} />
+                </button>
+                
+                <button
+                  onClick={toggleMute}
+                  className={`p-4 rounded-full transition-colors ${
+                    isMuted 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : 'bg-bjp-saffron hover:bg-bjp-darkSaffron'
+                  } text-white`}
+                  title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                >
+                  {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                </button>
+
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={`p-4 rounded-full transition-colors ${
+                    isRecording 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : 'bg-green-500 hover:bg-green-600'
+                  } text-white`}
+                  title={isRecording ? 'Stop recording' : 'Start recording'}
+                >
+                  {isRecording ? <Square size={24} /> : <Circle size={24} />}
+                </button>
+
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className={`p-4 rounded-full transition-colors ${
+                    showChat 
+                      ? 'bg-bjp-saffron hover:bg-bjp-darkSaffron' 
+                      : 'bg-gray-500 hover:bg-gray-600'
+                  } text-white`}
+                  title={showChat ? 'Hide chat' : 'Show chat'}
+                >
+                  <MessageCircle size={24} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Live Chat Section */}
+        {showChat && isLive && (
+          <div className="w-80 bg-gray-50 rounded-lg border border-gray-200 flex flex-col">
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 bg-white rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 flex items-center">
+                  <MessageCircle size={20} className="mr-2 text-bjp-saffron" />
+                  Live Chat
+                </h3>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Circle size={8} className="mr-1 text-green-500 fill-current animate-pulse" />
+                  {chatMessages.length} messages
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div 
+              ref={chatContainerRef}
+              className="flex-1 p-4 space-y-3 overflow-y-auto max-h-96"
+            >
+              {chatMessages.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <MessageCircle size={32} className="mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">No messages yet</p>
+                  <p className="text-xs">Be the first to say something!</p>
+                </div>
+              ) : (
+                chatMessages.map((message) => (
+                  <div key={message.id} className="flex flex-col">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-medium ${
+                        message.isHost ? 'text-bjp-saffron' : 'text-gray-700'
+                      }`}>
+                        {message.username}
+                        {message.isHost && (
+                          <span className="ml-1 text-xs bg-bjp-saffron text-white px-1 rounded">HOST</span>
+                        )}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {formatChatTime(message.timestamp)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-900 bg-white p-2 rounded-lg border border-gray-200">
+                      {message.message}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
+              <form onSubmit={handleSendMessage} className="flex space-x-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-bjp-saffron focus:border-bjp-saffron text-sm"
+                  maxLength={200}
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron disabled:bg-gray-300 text-white p-2 rounded-md transition-colors"
+                >
+                  <Send size={16} />
+                </button>
+              </form>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                <span>Chatting as: {username || 'Anonymous'}</span>
+                <span>{newMessage.length}/200</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Live session info */}
@@ -1040,6 +1228,7 @@ Duration: ${formatDuration(recordingDuration)}
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> Live session details have been automatically posted to your social media feed.
+              {showChat && <span className="block mt-1"><strong>Chat:</strong> Live chat is active! Viewers can send messages in real-time.</span>}
             </p>
           </div>
         </div>
