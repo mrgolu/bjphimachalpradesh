@@ -5,10 +5,10 @@ import { ToastContainer } from 'react-toastify'
 import App from './App'
 import './index.css'
 import 'react-toastify/dist/ReactToastify.css'
-import { initializeCapacitorPlugins } from './capacitor-plugins'
+import { initializeApp } from './capacitor-plugins'
 
 // Initialize Capacitor plugins
-initializeCapacitorPlugins();
+initializeApp();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
