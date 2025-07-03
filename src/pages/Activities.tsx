@@ -85,7 +85,7 @@ Join us for this ${activity.type}!
     window.open(whatsappUrl, '_blank');
   };
 
-  const shareActivityDetails = (activity: Activity) => {
+  const shareActivityDetails = async (activity: Activity) => {
     const message = `🎯 BJP Himachal Pradesh Activity
 
 *${activity.title}*
@@ -102,11 +102,17 @@ Coordinator: ${activity.coordinator}
 #BJPHimachal #${activity.type}`;
 
     if (navigator.share) {
-      navigator.share({
-        title: activity.title,
-        text: message,
-        url: window.location.href
-      });
+      try {
+        await navigator.share({
+          title: activity.title,
+          text: message,
+          url: window.location.href
+        });
+      } catch (error) {
+        // Fallback to clipboard if share fails (permission denied, user cancellation, etc.)
+        navigator.clipboard.writeText(message);
+        alert('Activity details copied to clipboard!');
+      }
     } else {
       navigator.clipboard.writeText(message);
       alert('Activity details copied to clipboard!');
