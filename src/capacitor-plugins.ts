@@ -1,4 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 import { 
   Camera, 
   CameraResultType, 
@@ -41,12 +41,15 @@ export type { Photo, ShareOptions };
 // Initialize app-specific settings
 export const initializeApp = async () => {
   try {
-    // Set status bar style
-    await StatusBar.setStyle({ style: Style.Light });
-    await StatusBar.setBackgroundColor({ color: '#FF9933' });
-    
-    // Hide splash screen after app loads
-    await SplashScreen.hide();
+    // Only run native-specific operations on mobile platforms
+    if (Capacitor.isNative) {
+      // Set status bar style
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: '#FF9933' });
+      
+      // Hide splash screen after app loads
+      await SplashScreen.hide();
+    }
     
     console.log('Capacitor app initialized successfully');
   } catch (error) {
