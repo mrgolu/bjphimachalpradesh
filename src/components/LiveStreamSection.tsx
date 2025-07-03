@@ -47,36 +47,6 @@ const LiveStreamSection: React.FC = () => {
               </div>
             )}
           </div>
-
-          <div className="mt-8 p-6 bg-white rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">Upcoming Live Sessions</h3>
-            <div className="space-y-4">
-              <div className="flex items-start border-b pb-4">
-                <div className="text-center mr-4">
-                  <div className="bg-bjp-lightSaffron text-bjp-darkSaffron font-bold py-1 px-3 rounded">
-                    MAY
-                  </div>
-                  <div className="text-2xl font-bold">25</div>
-                </div>
-                <div>
-                  <h4 className="font-medium">State President's Address</h4>
-                  <p className="text-gray-600 text-sm">6:00 PM - Monthly address to party workers and general public</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="text-center mr-4">
-                  <div className="bg-bjp-lightSaffron text-bjp-darkSaffron font-bold py-1 px-3 rounded">
-                    JUN
-                  </div>
-                  <div className="text-2xl font-bold">10</div>
-                </div>
-                <div>
-                  <h4 className="font-medium">Development Projects Update</h4>
-                  <p className="text-gray-600 text-sm">7:00 PM - Discussion on ongoing and upcoming development projects</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
