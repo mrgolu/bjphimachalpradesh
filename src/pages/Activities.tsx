@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, Share2, Camera, Upload, X, MessageCircle } from 'lucide-react';
+import { Calendar, MapPin, Users, Share2, Camera, Upload, X, MessageCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'react-toastify';
 
 interface Activity {
   id: string;
@@ -19,11 +20,24 @@ interface Activity {
 const Activities: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [deletingActivities, setDeletingActivities] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    checkAuth();
     fetchActivities();
   }, []);
 
+  const checkAuth = async () => {
+    if (!supabase) return;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    }
+  };
   const fetchActivities = async () => {
     try {
       const { data, error } = await supabase
@@ -85,6 +99,37 @@ Join us for this ${activity.type}!
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleDeleteActivity = async (id: string) => {
+    if (!supabase || !user) {
+      toast.error('Please sign in to delete activities');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this activity?')) return;
+
+    setDeletingActivities(prev => new Set(prev).add(id));
+
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setActivities(prev => prev.filter(activity => activity.id !== id));
+      toast.success('Activity deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toast.error('Failed to delete activity: ' + error.message);
+    } finally {
+      setDeletingActivities(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
   const shareActivityDetails = async (activity: Activity) => {
     const message = `🎯 BJP Himachal Pradesh Activity
 
@@ -158,14 +203,32 @@ Coordinator: ${activity.coordinator}
                 )}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-semibold text-bjp-darkGray">{activity.title}</h2>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      activity.type === 'campaign' 
-                        ? 'bg-bjp-lightSaffron text-bjp-darkSaffron'
-                        : 'bg-bjp-lightGreen text-bjp-darkGreen'
-                    }`}>
-                      {activity.type}
-                    </span>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-bjp-darkGray">{activity.title}</h2>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        activity.type === 'campaign' 
+                          ? 'bg-bjp-lightSaffron text-bjp-darkSaffron'
+                          : 'bg-bjp-lightGreen text-bjp-darkGreen'
+                      }`}>
+                        {activity.type}
+                      </span>
+                      {user && (
+                        <button
+                          onClick={() => handleDeleteActivity(activity.id)}
+                          disabled={deletingActivities.has(activity.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                          title="Delete activity"
+                        >
+                          {deletingActivities.has(activity.id) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2 mb-4">
                     <p className="flex items-center text-gray-600">

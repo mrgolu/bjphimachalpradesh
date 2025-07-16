@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, CameraOff, Mic, MicOff, Users, Clock, Circle, Square, Settings, Send, Calendar, MessageCircle } from 'lucide-react';
+import { Camera, CameraOff, Mic, MicOff, Users, Clock, Circle, Square, Settings, Send, Calendar, MessageCircle, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
@@ -43,6 +43,7 @@ const LiveVideo: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [scheduledSessions, setScheduledSessions] = useState<LiveSession[]>([]);
   const [nextSessionCountdown, setNextSessionCountdown] = useState<string>('');
+  const [deletingSessions, setDeletingSessions] = useState<Set<string>>(new Set());
   
   // Chat state
   const [showChat, setShowChat] = useState(false);
@@ -249,6 +250,35 @@ const LiveVideo: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [isLive, currentSession]);
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!isSupabaseReady || !supabase) return;
+
+    if (!confirm('Are you sure you want to delete this scheduled session?')) return;
+
+    setDeletingSessions(prev => new Set(prev).add(sessionId));
+
+    try {
+      const { error } = await supabase
+        .from('live_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      setScheduledSessions(prev => prev.filter(session => session.id !== sessionId));
+      toast.success('Scheduled session deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting session:', error);
+      toast.error('Failed to delete session: ' + error.message);
+    } finally {
+      setDeletingSessions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(sessionId);
+        return newSet;
+      });
+    }
+  };
 
   const addChatMessage = (username: string, message: string, isHost = false) => {
     const newMessage: ChatMessage = {
@@ -702,7 +732,7 @@ Duration: ${formatDuration(recordingDuration)}
                     : 'bg-bjp-lightGray border-bjp-saffron'
                 }`}>
                   <div className="flex justify-between items-start">
-                    <div className="flex-1">
+                    <div className="flex-1 pr-4">
                       <h4 className="font-semibold text-bjp-darkGray flex items-center">
                         {countdown.status === 'starting-now' && 
                           <Circle size={8} className="mr-2 text-red-600 fill-current animate-ping" />
@@ -791,7 +821,7 @@ Duration: ${formatDuration(recordingDuration)}
                         Host: {session.host_name}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end space-y-2">
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${
                         countdown.status === 'starting-now'
                           ? 'bg-red-200 text-red-900 animate-pulse' 
@@ -809,6 +839,20 @@ Duration: ${formatDuration(recordingDuration)}
                         <p className="text-xs text-red-600 mt-1 font-medium animate-pulse">
                           🤖 Will auto-start
                         </p>
+                      )}
+                      {user && (
+                        <button
+                          onClick={() => handleDeleteSession(session.id)}
+                          disabled={deletingSessions.has(session.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50 p-1"
+                          title="Delete scheduled session"
+                        >
+                          {deletingSessions.has(session.id) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
                       )}
                     </div>
                   </div>

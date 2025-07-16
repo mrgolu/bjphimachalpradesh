@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, Users, Video, Share2, MessageCircle, Copy, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Video, Share2, MessageCircle, Copy, ExternalLink, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import { toast } from 'react-toastify';
 
@@ -21,10 +21,24 @@ interface Meeting {
 const Meetings: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [deletingMeetings, setDeletingMeetings] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    checkAuth();
     fetchMeetings();
   }, []);
+
+  const checkAuth = async () => {
+    if (!isSupabaseReady || !supabase) return;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+    }
+  };
 
   const fetchMeetings = async () => {
     if (!isSupabaseReady || !supabase) {
@@ -82,6 +96,38 @@ const Meetings: React.FC = () => {
       setMeetings([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteMeeting = async (id: string) => {
+    if (!isSupabaseReady || !supabase || !user) {
+      toast.error('Please sign in to delete meetings');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this meeting?')) return;
+
+    setDeletingMeetings(prev => new Set(prev).add(id));
+
+    try {
+      const { error } = await supabase
+        .from('meetings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMeetings(prev => prev.filter(meeting => meeting.id !== id));
+      toast.success('Meeting deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting meeting:', error);
+      toast.error('Failed to delete meeting: ' + error.message);
+    } finally {
+      setDeletingMeetings(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   };
 
@@ -272,12 +318,27 @@ ${meeting.title}
               <div key={meeting.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="p-6">
                   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-                    <h2 className="text-2xl font-bold text-bjp-darkGray mb-4 lg:mb-0 flex-1">
+                    <h2 className="text-2xl font-bold text-bjp-darkGray mb-4 lg:mb-0 flex-1 pr-4">
                       {meeting.title}
                     </h2>
                     
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2">
+                      {user && (
+                        <button
+                          onClick={() => handleDeleteMeeting(meeting.id)}
+                          disabled={deletingMeetings.has(meeting.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors flex items-center disabled:opacity-50"
+                          title="Delete meeting"
+                        >
+                          {deletingMeetings.has(meeting.id) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          ) : (
+                            <Trash2 size={20} className="mr-2" />
+                          )}
+                          Delete
+                        </button>
+                      )}
                       <a
                         href={meeting.meeting_link}
                         target="_blank"
