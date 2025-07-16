@@ -33,51 +33,51 @@ function App() {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-5 gap-1 py-2">
           <Link
             to="/"
-            className={`flex flex-col items-center justify-center py-2 ${
+            className={`flex flex-col items-center justify-center py-3 px-2 ${
               location.pathname === '/' ? 'text-bjp-saffron' : 'text-gray-600'
             }`}
           >
-            <HomeIcon size={20} />
-            <span className="text-xs mt-1">Home</span>
+            <HomeIcon size={24} />
+            <span className="text-xs mt-1.5">Home</span>
           </Link>
           <Link
             to="/live"
-            className={`flex flex-col items-center justify-center py-2 ${
+            className={`flex flex-col items-center justify-center py-3 px-2 ${
               location.pathname === '/live' ? 'text-bjp-saffron' : 'text-gray-600'
             }`}
           >
-            <Video size={20} />
-            <span className="text-xs mt-1">Live</span>
+            <Video size={24} />
+            <span className="text-xs mt-1.5">Live</span>
           </Link>
           <Link
             to="/activities"
-            className={`flex flex-col items-center justify-center py-2 ${
+            className={`flex flex-col items-center justify-center py-3 px-2 ${
               location.pathname === '/activities' ? 'text-bjp-saffron' : 'text-gray-600'
             }`}
           >
-            <Calendar size={20} />
-            <span className="text-xs mt-1">Activities</span>
+            <Calendar size={24} />
+            <span className="text-xs mt-1.5">Activities</span>
           </Link>
           <Link
             to="/meetings"
-            className={`flex flex-col items-center justify-center py-2 ${
+            className={`flex flex-col items-center justify-center py-3 px-2 ${
               location.pathname === '/meetings' ? 'text-bjp-saffron' : 'text-gray-600'
             }`}
           >
-            <Users size={20} />
-            <span className="text-xs mt-1">Meetings</span>
+            <Users size={24} />
+            <span className="text-xs mt-1.5">Meetings</span>
           </Link>
           <Link
             to="/gallery"
-            className={`flex flex-col items-center justify-center py-2 ${
+            className={`flex flex-col items-center justify-center py-3 px-2 ${
               location.pathname === '/gallery' ? 'text-bjp-saffron' : 'text-gray-600'
             }`}
           >
-            <Menu size={20} />
-            <span className="text-xs mt-1">Gallery</span>
+            <Menu size={24} />
+            <span className="text-xs mt-1.5">Gallery</span>
           </Link>
         </div>
       </div>
