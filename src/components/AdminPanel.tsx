@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Video, Calendar, Users, MessageSquare, BarChart3, Settings } from 'lucide-react';
+import { Plus, Image, Video, Calendar, Users, MessageSquare, BarChart3, Settings, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import { toast } from 'react-toastify';
 import GalleryAdminPanel from './GalleryAdminPanel';
@@ -50,6 +50,7 @@ const AdminPanel: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
 
   // Form states
   const [postForm, setPostForm] = useState({
@@ -313,6 +314,93 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleDeletePost = async (id: string) => {
+    if (!isSupabaseReady || !supabase) return;
+
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
+    setDeletingItems(prev => new Set(prev).add(id));
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPosts(prev => prev.filter(post => post.id !== id));
+      toast.success('Post deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      toast.error('Failed to delete post: ' + error.message);
+    } finally {
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    if (!isSupabaseReady || !supabase) return;
+
+    if (!confirm('Are you sure you want to delete this activity?')) return;
+
+    setDeletingItems(prev => new Set(prev).add(id));
+
+    try {
+      const { error } = await supabase
+        .from('activities')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setActivities(prev => prev.filter(activity => activity.id !== id));
+      toast.success('Activity deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toast.error('Failed to delete activity: ' + error.message);
+    } finally {
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDeleteMeeting = async (id: string) => {
+    if (!isSupabaseReady || !supabase) return;
+
+    if (!confirm('Are you sure you want to delete this meeting?')) return;
+
+    setDeletingItems(prev => new Set(prev).add(id));
+
+    try {
+      const { error } = await supabase
+        .from('meetings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMeetings(prev => prev.filter(meeting => meeting.id !== id));
+      toast.success('Meeting deleted successfully!');
+    } catch (error: any) {
+      console.error('Error deleting meeting:', error);
+      toast.error('Failed to delete meeting: ' + error.message);
+    } finally {
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -507,7 +595,21 @@ const AdminPanel: React.FC = () => {
                 <div className="space-y-4">
                   {posts.slice(0, 5).map((post) => (
                     <div key={post.id} className="border border-gray-200 rounded-lg p-4">
-                      <p className="text-gray-900 mb-2">{post.content}</p>
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="text-gray-900 flex-1">{post.content}</p>
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          disabled={deletingItems.has(post.id)}
+                          className="ml-4 text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                          title="Delete post"
+                        >
+                          {deletingItems.has(post.id) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
+                      </div>
                       <div className="flex justify-between items-center text-sm text-gray-500">
                         <span>{formatDate(post.created_at)}</span>
                         <div className="flex space-x-2">
@@ -665,7 +767,7 @@ const AdminPanel: React.FC = () => {
                   {activities.slice(0, 5).map((activity) => (
                     <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{activity.title}</h4>
                           <p className="text-gray-600 text-sm mt-1">{activity.description}</p>
                           <div className="flex items-center text-sm text-gray-500 mt-2">
@@ -676,13 +778,27 @@ const AdminPanel: React.FC = () => {
                             }
                           </div>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          activity.type === 'campaign' 
-                            ? 'bg-bjp-lightSaffron text-bjp-darkSaffron'
-                            : 'bg-bjp-lightGreen text-bjp-darkGreen'
-                        }`}>
-                          {activity.type}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            activity.type === 'campaign' 
+                              ? 'bg-bjp-lightSaffron text-bjp-darkSaffron'
+                              : 'bg-bjp-lightGreen text-bjp-darkGreen'
+                          }`}>
+                            {activity.type}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteActivity(activity.id)}
+                            disabled={deletingItems.has(activity.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                            title="Delete activity"
+                          >
+                            {deletingItems.has(activity.id) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -846,7 +962,7 @@ const AdminPanel: React.FC = () => {
                   {meetings.slice(0, 5).map((meeting) => (
                     <div key={meeting.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{meeting.title}</h4>
                           <p className="text-gray-600 text-sm mt-1">{meeting.agenda}</p>
                           <div className="flex items-center text-sm text-gray-500 mt-2">
@@ -857,16 +973,30 @@ const AdminPanel: React.FC = () => {
                             <p className="text-sm text-gray-500">Organizer: {meeting.organizer}</p>
                           )}
                         </div>
-                        {meeting.meeting_link && (
-                          <a
-                            href={meeting.meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-bjp-saffron text-white px-3 py-1 rounded text-sm hover:bg-bjp-darkSaffron transition-colors"
+                        <div className="flex items-center space-x-2">
+                          {meeting.meeting_link && (
+                            <a
+                              href={meeting.meeting_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-bjp-saffron text-white px-3 py-1 rounded text-sm hover:bg-bjp-darkSaffron transition-colors"
+                            >
+                              Join
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleDeleteMeeting(meeting.id)}
+                            disabled={deletingItems.has(meeting.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                            title="Delete meeting"
                           >
-                            Join
-                          </a>
-                        )}
+                            {deletingItems.has(meeting.id) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
