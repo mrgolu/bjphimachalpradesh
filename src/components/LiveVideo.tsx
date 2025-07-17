@@ -503,14 +503,41 @@ const LiveVideo: React.FC = () => {
 
   const goLiveWithSession = async (session: LiveSession) => {
     try {
+      // Mobile-specific media constraints
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      const constraints = {
+        video: isMobile ? {
+          facingMode: 'user', // Front camera on mobile
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 30 }
+        } : true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      };
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
+        video: constraints.video,
+        audio: constraints.audio
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
+        videoRef.current.muted = true; // Always mute to prevent feedback
+        videoRef.current.playsInline = true; // Important for iOS
+        videoRef.current.autoplay = true;
+        
+        // Ensure video plays on mobile
+        try {
+          await videoRef.current.play();
+        } catch (playError) {
+          console.warn('Autoplay failed, user interaction required:', playError);
+        }
+        
         setIsStreaming(true);
         setIsLive(true);
         setError('');
@@ -530,8 +557,38 @@ const LiveVideo: React.FC = () => {
         addChatMessage('System', `Welcome to ${session.title}! Chat is now active.`);
       }
     } catch (err) {
-      setError('Failed to access camera. Please ensure camera permissions are granted.');
       console.error('Error accessing media devices:', err);
+      
+      // More specific error messages for mobile
+      if (err.name === 'NotAllowedError') {
+        setError('Camera permission denied. Please allow camera access and try again.');
+      } else if (err.name === 'NotFoundError') {
+        setError('No camera found. Please ensure your device has a camera.');
+      } else if (err.name === 'NotReadableError') {
+        setError('Camera is being used by another app. Please close other camera apps and try again.');
+      } else if (err.name === 'OverconstrainedError') {
+        setError('Camera constraints not supported. Trying with basic settings...');
+        // Fallback with basic constraints
+        try {
+          const basicStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: true
+          });
+          if (videoRef.current) {
+            videoRef.current.srcObject = basicStream;
+            videoRef.current.muted = true;
+            videoRef.current.playsInline = true;
+            await videoRef.current.play();
+            setIsStreaming(true);
+            setIsLive(true);
+            setError('');
+          }
+        } catch (fallbackError) {
+          setError('Failed to access camera with basic settings. Please check your device permissions.');
+        }
+      } else {
+        setError('Failed to access camera. Please ensure camera permissions are granted and try again.');
+      }
     }
   };
 
@@ -1058,6 +1115,8 @@ Duration: ${formatDuration(recordingDuration)}
             autoPlay
             playsInline
             muted={true}
+            controls={false}
+            webkit-playsinline="true"
             className={`w-full aspect-video rounded-lg bg-gray-900 ${!isStreaming ? 'hidden' : ''}`}
           />
           
@@ -1065,8 +1124,21 @@ Duration: ${formatDuration(recordingDuration)}
             <div className="w-full aspect-video rounded-lg bg-gray-900 flex items-center justify-center">
               <div className="text-center text-white">
                 <CameraOff size={48} className="mx-auto mb-4" />
-                <p className="text-lg mb-4">Ready to go live?</p>
+                <p className="text-lg mb-4">
+                  {error ? 'Camera Error' : 'Ready to go live?'}
+                </p>
                 {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+                {error && (
+                  <div className="mt-4 text-sm text-gray-300">
+                    <p className="mb-2">Troubleshooting tips:</p>
+                    <ul className="text-left space-y-1">
+                      <li>• Allow camera permissions in browser settings</li>
+                      <li>• Close other apps using the camera</li>
+                      <li>• Try refreshing the page</li>
+                      <li>• Check if camera works in other apps</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}
