@@ -762,24 +762,24 @@ Duration: ${formatDuration(recordingDuration)}
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
       {/* Scheduled Sessions */}
       {scheduledSessions.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-bjp-darkGray mb-4">
+        <div className="mb-4 md:mb-6">
+          <h3 className="text-base md:text-lg font-semibold text-bjp-darkGray mb-3 md:mb-4">
             📅 Scheduled Live Sessions
             {nextSessionCountdown && (
-              <span className="ml-2 text-sm font-normal text-bjp-saffron">
+              <span className="block md:inline md:ml-2 text-xs md:text-sm font-normal text-bjp-saffron mt-1 md:mt-0">
                 (Next: {nextSessionCountdown})
               </span>
             )}
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {scheduledSessions.map((session) => {
               const countdown = getDetailedCountdown(session.start_time);
               
               return (
-                <div key={session.id} className={`p-4 rounded-lg border-l-4 ${
+                <div key={session.id} className={`p-3 md:p-4 rounded-lg border-l-4 ${
                   countdown.status === 'starting-now'
                     ? 'bg-red-100 border-red-600 animate-pulse' 
                     : countdown.status === 'starting-soon'
@@ -788,9 +788,9 @@ Duration: ${formatDuration(recordingDuration)}
                     ? 'bg-orange-50 border-orange-500'
                     : 'bg-bjp-lightGray border-bjp-saffron'
                 }`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 pr-4">
-                      <h4 className="font-semibold text-bjp-darkGray flex items-center">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start space-y-2 md:space-y-0">
+                    <div className="flex-1 md:pr-4">
+                      <h4 className="text-sm md:text-base font-semibold text-bjp-darkGray flex items-center">
                         {countdown.status === 'starting-now' && 
                           <Circle size={8} className="mr-2 text-red-600 fill-current animate-ping" />
                         }
@@ -799,8 +799,8 @@ Duration: ${formatDuration(recordingDuration)}
                         }
                         {session.title}
                       </h4>
-                      <p className="text-gray-600 text-sm mb-2">{session.description}</p>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <p className="text-gray-600 text-xs md:text-sm mb-2">{session.description}</p>
+                      <div className="flex items-center text-xs md:text-sm text-gray-600 mb-2">
                         <Calendar size={16} className="mr-2 text-bjp-saffron" />
                         <span>{formatDateTime(session.start_time)}</span>
                       </div>
@@ -874,12 +874,12 @@ Duration: ${formatDuration(recordingDuration)}
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
                         Host: {session.host_name}
                       </p>
                     </div>
-                    <div className="text-right flex flex-col items-end space-y-2">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    <div className="flex flex-row md:flex-col items-start md:items-end space-x-2 md:space-x-0 md:space-y-2">
+                      <div className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
                         countdown.status === 'starting-now'
                           ? 'bg-red-200 text-red-900 animate-pulse' 
                           : countdown.status === 'starting-soon'
@@ -893,7 +893,7 @@ Duration: ${formatDuration(recordingDuration)}
                          countdown.status === 'imminent' ? '🟠 Starting Soon' : '📅 Scheduled'}
                       </div>
                       {(countdown.status === 'starting-now' || countdown.status === 'starting-soon' || countdown.status === 'imminent') && (
-                        <p className="text-xs text-red-600 mt-1 font-medium animate-pulse">
+                        <p className="text-xs text-red-600 font-medium animate-pulse">
                           🤖 Will auto-start
                         </p>
                       )}
@@ -907,7 +907,7 @@ Duration: ${formatDuration(recordingDuration)}
                           {deletingSessions.has(session.id) ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
                           ) : (
-                            <Trash2 size={16} />
+                            <Trash2 size={14} className="md:w-4 md:h-4" />
                           )}
                         </button>
                       )}
@@ -917,8 +917,8 @@ Duration: ${formatDuration(recordingDuration)}
               );
             })}
           </div>
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-blue-800">
+          <div className="mt-3 md:mt-4 p-2 md:p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-xs md:text-sm text-blue-800">
               <strong>🤖 Auto-Start:</strong> Scheduled sessions will automatically start at their designated time. 
               Live countdown updates every second with precise timing!
             </p>
@@ -929,9 +929,9 @@ Duration: ${formatDuration(recordingDuration)}
       {/* Live Setup Modal */}
       {showLiveSetup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-bjp-darkGray mb-4">Setup Live Session</h3>
-            <form onSubmit={handleLiveSetupSubmit} className="space-y-4">
+          <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg md:text-xl font-bold text-bjp-darkGray mb-3 md:mb-4">Setup Live Session</h3>
+            <form onSubmit={handleLiveSetupSubmit} className="space-y-3 md:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Session Title *
