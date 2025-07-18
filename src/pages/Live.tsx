@@ -1,6 +1,5 @@
 import React from 'react';
 import LiveVideo from '../components/LiveVideo';
-import LiveStreamSection from '../components/LiveStreamSection';
 import SocialBar from '../components/SocialBar';
 
 const Live: React.FC = () => {
@@ -15,10 +14,6 @@ const Live: React.FC = () => {
             </p>
             
             <LiveVideo />
-            
-            <div className="mt-6 md:mt-8">
-              <LiveStreamSection />
-            </div>
           </div>
           
           <div className="w-full lg:w-1/4 mt-6 lg:mt-0">

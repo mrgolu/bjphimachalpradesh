@@ -62,12 +62,15 @@ const Navbar: React.FC = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className={`font-medium transition-colors hover:text-bjp-saffron ${
+                    className={`font-medium transition-colors hover:text-bjp-saffron flex items-center ${
                       location.pathname === link.path
                         ? 'text-bjp-saffron'
                         : scrolled ? 'text-bjp-darkGray' : 'text-white'
                     }`}
                   >
+                    {link.name === 'Live' && (
+                      <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                    )}
                     {link.name}
                   </Link>
                 </li>

@@ -86,10 +86,13 @@ function App() {
         <div className="fixed bottom-24 md:bottom-6 right-6 flex flex-col gap-4 z-40">
           <Link
             to="/live"
-            className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white p-4 rounded-full shadow-lg transition-all hover:scale-110"
+            className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110 animate-pulse"
             title="Go Live"
           >
-            <Video size={24} />
+            <div className="flex items-center justify-center">
+              <div className="w-3 h-3 bg-white rounded-full mr-1"></div>
+              <Video size={20} />
+            </div>
           </Link>
           <Link
             to="/"

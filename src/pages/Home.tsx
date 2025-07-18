@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle, Heart } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 
 interface Post {
@@ -437,8 +437,8 @@ ${meeting.agenda}
             <h1 className="text-2xl font-bold text-bjp-darkGray">BJP Himachal Pradesh</h1>
             <div className="flex items-center space-x-4">
               <Link to="/live" className="text-bjp-saffron hover:text-bjp-darkSaffron">
-                <div className="w-8 h-8 border-2 border-current rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-current rounded-full"></div>
+                <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center bg-red-50 animate-pulse">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
                 </div>
               </Link>
               <Link to="/admin" className="text-gray-600 hover:text-gray-900">
