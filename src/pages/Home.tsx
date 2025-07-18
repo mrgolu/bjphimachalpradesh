@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Clock, MapPin, Calendar, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 
 interface Post {
@@ -47,8 +47,6 @@ const Home: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-  const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchAllData();
@@ -194,30 +192,6 @@ ${meeting.agenda}
     shareOnWhatsApp(message);
   };
 
-  const toggleLike = (postId: string) => {
-    setLikedPosts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(postId)) {
-        newSet.delete(postId);
-      } else {
-        newSet.add(postId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleSave = (postId: string) => {
-    setSavedPosts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(postId)) {
-        newSet.delete(postId);
-      } else {
-        newSet.add(postId);
-      }
-      return newSet;
-    });
-  };
-
   const renderPostCard = (post: Post) => (
     <div key={`post-${post.id}`} className="bg-white border border-gray-200 rounded-lg mb-6 shadow-sm">
       {/* Post Header */}
@@ -249,40 +223,6 @@ ${meeting.agenda}
 
       {/* Post Actions */}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => toggleLike(post.id)}
-              className={`transition-colors ${likedPosts.has(post.id) ? 'text-red-500' : 'text-gray-700 hover:text-gray-900'}`}
-            >
-              <Heart size={24} fill={likedPosts.has(post.id) ? 'currentColor' : 'none'} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <MessageCircle size={24} />
-            </button>
-            <button 
-              onClick={() => shareOnWhatsApp(post.content)}
-              className="text-green-500 hover:text-green-600"
-              title="Share on WhatsApp"
-            >
-              <MessageCircle size={24} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <Share2 size={24} />
-            </button>
-          </div>
-          <button 
-            onClick={() => toggleSave(post.id)}
-            className={`transition-colors ${savedPosts.has(post.id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}`}
-          >
-            <Bookmark size={24} fill={savedPosts.has(post.id) ? 'currentColor' : 'none'} />
-          </button>
-        </div>
-
-        {/* Likes count */}
-        <p className="font-semibold text-gray-900 mb-2">
-          {Math.floor(Math.random() * 1000) + 100} likes
-        </p>
 
         {/* Post Content */}
         <div className="mb-3">
@@ -325,11 +265,6 @@ ${meeting.agenda}
             )}
           </div>
         )}
-
-        {/* View comments */}
-        <button className="text-gray-500 text-sm">
-          View all {Math.floor(Math.random() * 50) + 5} comments
-        </button>
       </div>
     </div>
   );
@@ -369,41 +304,6 @@ ${meeting.agenda}
 
       {/* Activity Actions */}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => toggleLike(activity.id)}
-              className={`transition-colors ${likedPosts.has(activity.id) ? 'text-red-500' : 'text-gray-700 hover:text-gray-900'}`}
-            >
-              <Heart size={24} fill={likedPosts.has(activity.id) ? 'currentColor' : 'none'} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <MessageCircle size={24} />
-            </button>
-            <button 
-              onClick={() => shareActivityOnWhatsApp(activity)}
-              className="text-green-500 hover:text-green-600"
-              title="Share on WhatsApp"
-            >
-              <MessageCircle size={24} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <Share2 size={24} />
-            </button>
-          </div>
-          <button 
-            onClick={() => toggleSave(activity.id)}
-            className={`transition-colors ${savedPosts.has(activity.id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}`}
-          >
-            <Bookmark size={24} fill={savedPosts.has(activity.id) ? 'currentColor' : 'none'} />
-          </button>
-        </div>
-
-        {/* Likes count */}
-        <p className="font-semibold text-gray-900 mb-2">
-          {Math.floor(Math.random() * 500) + 50} likes
-        </p>
-
         {/* Activity Content */}
         <div className="mb-3">
           <h4 className="font-semibold text-gray-900 mb-2">{activity.title}</h4>
@@ -426,11 +326,6 @@ ${meeting.agenda}
             </p>
           </div>
         </div>
-
-        {/* View comments */}
-        <button className="text-gray-500 text-sm">
-          View all {Math.floor(Math.random() * 30) + 3} comments
-        </button>
       </div>
     </div>
   );
@@ -455,41 +350,6 @@ ${meeting.agenda}
 
       {/* Meeting Content */}
       <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => toggleLike(meeting.id)}
-              className={`transition-colors ${likedPosts.has(meeting.id) ? 'text-red-500' : 'text-gray-700 hover:text-gray-900'}`}
-            >
-              <Heart size={24} fill={likedPosts.has(meeting.id) ? 'currentColor' : 'none'} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <MessageCircle size={24} />
-            </button>
-            <button 
-              onClick={() => shareMeetingOnWhatsApp(meeting)}
-              className="text-green-500 hover:text-green-600"
-              title="Share on WhatsApp"
-            >
-              <MessageCircle size={24} />
-            </button>
-            <button className="text-gray-700 hover:text-gray-900">
-              <Share2 size={24} />
-            </button>
-          </div>
-          <button 
-            onClick={() => toggleSave(meeting.id)}
-            className={`transition-colors ${savedPosts.has(meeting.id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900'}`}
-          >
-            <Bookmark size={24} fill={savedPosts.has(meeting.id) ? 'currentColor' : 'none'} />
-          </button>
-        </div>
-
-        {/* Likes count */}
-        <p className="font-semibold text-gray-900 mb-2">
-          {Math.floor(Math.random() * 200) + 20} likes
-        </p>
-
         {/* Meeting Content */}
         <div className="mb-3">
           <h4 className="font-semibold text-gray-900 mb-2">{meeting.title}</h4>
@@ -516,12 +376,6 @@ ${meeting.agenda}
           Join Meeting
         </a>
 
-        {/* View comments */}
-        <div>
-          <button className="text-gray-500 text-sm">
-            View all {Math.floor(Math.random() * 20) + 2} comments
-          </button>
-        </div>
       </div>
     </div>
   );
