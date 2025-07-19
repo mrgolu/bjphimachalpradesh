@@ -434,7 +434,6 @@ ${meeting.agenda}
       <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-bjp-darkGray">BJP Himachal Pradesh</h1>
             <div className="flex items-center space-x-4">
               <Link to="/live" className="text-bjp-saffron hover:text-bjp-darkSaffron">
                 <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center bg-red-50 animate-pulse">
