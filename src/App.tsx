@@ -32,8 +32,8 @@ function App() {
       <Footer />
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-        <div className="grid grid-cols-5 gap-1 py-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe">
+        <div className="grid grid-cols-5 gap-1 py-3 px-2" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
           <Link
             to="/"
             className={`flex flex-col items-center justify-center py-3 px-2 ${
@@ -41,7 +41,7 @@ function App() {
             }`}
           >
             <HomeIcon size={24} />
-            <span className="text-xs mt-1.5">Home</span>
+            <span className="text-xs mt-1">Home</span>
           </Link>
           <Link
             to="/live"
@@ -50,7 +50,7 @@ function App() {
             }`}
           >
             <Video size={24} />
-            <span className="text-xs mt-1.5">Live</span>
+            <span className="text-xs mt-1">Live</span>
           </Link>
           <Link
             to="/activities"
@@ -59,7 +59,7 @@ function App() {
             }`}
           >
             <Calendar size={24} />
-            <span className="text-xs mt-1.5">Activities</span>
+            <span className="text-xs mt-1">Activities</span>
           </Link>
           <Link
             to="/meetings"
@@ -68,7 +68,7 @@ function App() {
             }`}
           >
             <Users size={24} />
-            <span className="text-xs mt-1.5">Meetings</span>
+            <span className="text-xs mt-1">Meetings</span>
           </Link>
           <Link
             to="/gallery"
@@ -77,13 +77,13 @@ function App() {
             }`}
           >
             <Menu size={24} />
-            <span className="text-xs mt-1.5">Gallery</span>
+            <span className="text-xs mt-1">Gallery</span>
           </Link>
         </div>
       </div>
 
       {showButtons && (
-        <div className="fixed bottom-24 md:bottom-6 right-6 flex flex-col gap-4 z-40">
+        <div className="fixed right-6 flex flex-col gap-4 z-40" style={{ bottom: 'max(120px, calc(120px + env(safe-area-inset-bottom)))' }}>
           <Link
             to="/live"
             className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110 animate-pulse"

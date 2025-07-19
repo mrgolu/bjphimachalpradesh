@@ -429,7 +429,7 @@ ${meeting.agenda}
   ].sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime());
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 pt-20 pb-safe">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
         <div className="max-w-lg mx-auto px-4 py-4">
@@ -452,7 +452,7 @@ ${meeting.agenda}
       </div>
 
       {/* Feed */}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 mb-20 md:mb-0">
         {allContent.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -482,7 +482,7 @@ ${meeting.agenda}
       </div>
 
       {/* Quick Actions */}
-      <div className="fixed bottom-24 md:bottom-6 right-6 flex flex-col gap-4 z-40">
+      <div className="fixed right-6 flex flex-col gap-4 z-40" style={{ bottom: 'max(120px, calc(120px + env(safe-area-inset-bottom)))' }}>
         <Link
           to="/live"
           className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white p-4 rounded-full shadow-lg transition-all hover:scale-110"
