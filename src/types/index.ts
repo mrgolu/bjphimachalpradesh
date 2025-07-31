@@ -1,4 +1,4 @@
-export interface NewsItem {
+interface NewsItem {
   id: string;
   title: string;
   content: string;
@@ -14,7 +14,7 @@ export interface SocialLink {
   icon: string;
 }
 
-export interface GalleryImage {
+interface GalleryImage {
   id: string;
   url: string;
   title: string;
@@ -22,7 +22,7 @@ export interface GalleryImage {
   date: string;
 }
 
-export interface LeaderInfo {
+interface LeaderInfo {
   id: string;
   name: string;
   position: string;

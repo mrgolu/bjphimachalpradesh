@@ -20,23 +20,8 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { Keyboard } from '@capacitor/keyboard';
 
 // Export all Capacitor plugins for use in the app
-export {
-  Camera,
-  CameraResultType,
-  CameraSource,
-  Share,
-  Filesystem,
-  Directory,
-  Encoding,
-  Haptics,
-  ImpactStyle,
-  StatusBar,
-  Style,
-  SplashScreen,
-  Keyboard
-};
-
-export type { Photo, ShareOptions };
+;
+;
 
 // Initialize app-specific settings
 export const initializeApp = async () => {
@@ -58,7 +43,7 @@ export const initializeApp = async () => {
 };
 
 // Utility functions for mobile features
-export const shareContent = async (options: ShareOptions) => {
+const shareContent = async (options: ShareOptions) => {
   try {
     await Share.share(options);
   } catch (error) {
@@ -66,7 +51,7 @@ export const shareContent = async (options: ShareOptions) => {
   }
 };
 
-export const takePicture = async (): Promise<Photo | null> => {
+const takePicture = async (): Promise<Photo | null> => {
   try {
     const image = await Camera.getPhoto({
       quality: 90,
@@ -81,7 +66,7 @@ export const takePicture = async (): Promise<Photo | null> => {
   }
 };
 
-export const selectFromGallery = async (): Promise<Photo | null> => {
+const selectFromGallery = async (): Promise<Photo | null> => {
   try {
     const image = await Camera.getPhoto({
       quality: 90,
@@ -96,7 +81,7 @@ export const selectFromGallery = async (): Promise<Photo | null> => {
   }
 };
 
-export const vibrate = async () => {
+const vibrate = async () => {
   try {
     await Haptics.impact({ style: ImpactStyle.Medium });
   } catch (error) {
