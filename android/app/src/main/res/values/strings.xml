@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">BJP Himachal Pradesh</string>
-    <string name="title_activity_main">BJP HP - Official App</string>
-    <string name="package_name">com.bjphimachal.app</string>
-    <string name="custom_url_scheme">com.bjphimachal.app</string>
-    <string name="app_description">Official mobile application of Bharatiya Janata Party Himachal Pradesh for news, live sessions, activities, meetings and gallery.</string>
-</resources>

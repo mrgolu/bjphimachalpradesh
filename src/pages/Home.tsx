@@ -481,7 +481,7 @@ ${meeting.agenda}
       </div>
 
       {/* Quick Actions */}
-      <div className="fixed right-6 flex flex-col gap-4 z-40" style={{ bottom: 'max(120px, calc(120px + env(safe-area-inset-bottom)))' }}>
+      <div className="fixed right-6 bottom-24 flex flex-col gap-4 z-40">
         <Link
           to="/live"
           className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white p-4 rounded-full shadow-lg transition-all hover:scale-110"

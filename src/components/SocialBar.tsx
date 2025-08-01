@@ -1,8 +1,30 @@
 import React from 'react';
 import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
-import { socialLinks } from '../data/social';
 
 const SocialBar: React.FC = () => {
+  const socialLinks = [
+    {
+      platform: 'Facebook',
+      url: 'https://www.facebook.com/bjphimachalpradesh',
+      icon: 'Facebook'
+    },
+    {
+      platform: 'Instagram',
+      url: 'https://www.instagram.com/bjphimachal',
+      icon: 'Instagram'
+    },
+    {
+      platform: 'Twitter',
+      url: 'https://twitter.com/BJP4Himachal',
+      icon: 'Twitter'
+    },
+    {
+      platform: 'YouTube',
+      url: 'https://www.youtube.com/channel/BJPHimachal',
+      icon: 'Youtube'
+    }
+  ];
+
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'Facebook':
