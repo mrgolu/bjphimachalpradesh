@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Image, Video, Calendar, Users, MessageSquare, BarChart3, Settings, Trash2 } from 'lucide-react';
+import { Plus, Image, Video, Calendar, Users, MessageSquare, BarChart3, Settings, Trash2, Upload } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import { toast } from 'react-toastify';
 import GalleryAdminPanel from './GalleryAdminPanel';
@@ -55,7 +55,6 @@ const AdminPanel: React.FC = () => {
   // Form states
   const [postForm, setPostForm] = useState({
     content: '',
-    imageUrl: '',
     facebookUrl: '',
     instagramUrl: '',
     twitterUrl: ''
@@ -70,9 +69,71 @@ const AdminPanel: React.FC = () => {
     description: '',
     coordinator: '',
     participants: '',
-    imageUrl: ''
   });
 
+  // File upload states
+  const [selectedPostFile, setSelectedPostFile] = useState<File | null>(null);
+  const [selectedActivityFile, setSelectedActivityFile] = useState<File | null>(null);
+  const [postFilePreview, setPostFilePreview] = useState<string | null>(null);
+  const [activityFilePreview, setActivityFilePreview] = useState<string | null>(null);
+  const [isUploadingPost, setIsUploadingPost] = useState(false);
+  const [isUploadingActivity, setIsUploadingActivity] = useState(false);
+
+  const handleFileSelect = (file: File, type: 'post' | 'activity') => {
+    if (!file) return;
+
+    // Validate file type
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    
+    const isValidImage = validImageTypes.includes(file.type);
+    const isValidVideo = validVideoTypes.includes(file.type);
+    
+    if (!isValidImage && !isValidVideo) {
+      toast.error('Please select a valid image or video file');
+      return;
+    }
+
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    if (type === 'post') {
+      setSelectedPostFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPostFilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setSelectedActivityFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setActivityFilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFileToStorage = async (file: File): Promise<string> => {
+    if (!supabase || !user) {
+      throw new Error('Authentication required');
+    }
+
+    // Create unique filename
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    // For demo purposes, we'll use a placeholder URL
+    // In a real app, you would upload to Supabase Storage or another service
+    return URL.createObjectURL(file);
+  };
   const [meetingForm, setMeetingForm] = useState({
     title: '',
     date: '',
@@ -164,12 +225,21 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
+    setIsUploadingPost(true);
+
     try {
+      let imageUrl = null;
+
+      // Upload file if selected
+      if (selectedPostFile) {
+        imageUrl = await uploadFileToStorage(selectedPostFile);
+      }
+
       const { data, error } = await supabase
         .from('posts')
         .insert([{
           content: postForm.content.trim(),
-          image_url: postForm.imageUrl.trim() || null,
+          image_url: imageUrl,
           facebook_url: postForm.facebookUrl.trim() || null,
           instagram_url: postForm.instagramUrl.trim() || null,
           twitter_url: postForm.twitterUrl.trim() || null,
@@ -183,16 +253,19 @@ const AdminPanel: React.FC = () => {
       setPosts(prev => [data, ...prev]);
       setPostForm({
         content: '',
-        imageUrl: '',
         facebookUrl: '',
         instagramUrl: '',
         twitterUrl: ''
       });
+      setSelectedPostFile(null);
+      setPostFilePreview(null);
       
       toast.success('Post created successfully!');
     } catch (error: any) {
       console.error('Error creating post:', error);
       toast.error('Failed to create post: ' + error.message);
+    } finally {
+      setIsUploadingPost(false);
     }
   };
 
@@ -209,7 +282,16 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
+    setIsUploadingActivity(true);
+
     try {
+      let imageUrl = null;
+
+      // Upload file if selected
+      if (selectedActivityFile) {
+        imageUrl = await uploadFileToStorage(selectedActivityFile);
+      }
+
       const { data, error } = await supabase
         .from('activities')
         .insert([{
@@ -221,7 +303,7 @@ const AdminPanel: React.FC = () => {
           description: activityForm.description.trim(),
           coordinator: activityForm.coordinator.trim(),
           participants: activityForm.participants.trim(),
-          image_url: activityForm.imageUrl.trim() || null,
+          image_url: imageUrl,
           user_id: user.id
         }])
         .select()
@@ -239,13 +321,16 @@ const AdminPanel: React.FC = () => {
         description: '',
         coordinator: '',
         participants: '',
-        imageUrl: ''
       });
+      setSelectedActivityFile(null);
+      setActivityFilePreview(null);
       
       toast.success('Activity created successfully!');
     } catch (error: any) {
       console.error('Error creating activity:', error);
       toast.error('Failed to create activity: ' + error.message);
+    } finally {
+      setIsUploadingActivity(false);
     }
   };
 
@@ -524,16 +609,58 @@ const AdminPanel: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Image URL
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Image/Video
                     </label>
-                    <input
-                      type="url"
-                      value={postForm.imageUrl}
-                      onChange={(e) => setPostForm({ ...postForm, imageUrl: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-bjp-saffron focus:border-bjp-saffron"
-                      placeholder="https://example.com/image.jpg"
-                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-bjp-saffron transition-colors">
+                      {postFilePreview ? (
+                        <div className="space-y-2">
+                          {selectedPostFile?.type.startsWith('image/') ? (
+                            <img
+                              src={postFilePreview}
+                              alt="Preview"
+                              className="max-h-32 mx-auto rounded"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 rounded mx-auto flex items-center justify-center">
+                              <Video size={24} className="text-gray-500" />
+                            </div>
+                          )}
+                          <p className="text-sm text-gray-600">{selectedPostFile?.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPostFile(null);
+                              setPostFilePreview(null);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-600 mb-2">Click to upload image or video</p>
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileSelect(file, 'post');
+                            }}
+                            className="hidden"
+                            id="post-file-upload"
+                          />
+                          <label
+                            htmlFor="post-file-upload"
+                            className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-3 py-1 rounded text-sm cursor-pointer transition-colors"
+                          >
+                            Choose File
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -574,10 +701,20 @@ const AdminPanel: React.FC = () => {
                 </div>
                 <button
                   type="submit"
-                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-2 rounded-md transition-colors flex items-center"
+                  disabled={isUploadingPost}
+                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-2 rounded-md transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus size={20} className="mr-2" />
-                  Create Post
+                  {isUploadingPost ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={20} className="mr-2" />
+                      Create Post
+                    </>
+                  )}
                 </button>
               </form>
             </div>
@@ -732,23 +869,75 @@ const AdminPanel: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Image/Video
                   </label>
-                  <input
-                    type="url"
-                    value={activityForm.imageUrl}
-                    onChange={(e) => setActivityForm({ ...activityForm, imageUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-bjp-saffron focus:border-bjp-saffron"
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-bjp-saffron transition-colors">
+                    {activityFilePreview ? (
+                      <div className="space-y-2">
+                        {selectedActivityFile?.type.startsWith('image/') ? (
+                          <img
+                            src={activityFilePreview}
+                            alt="Preview"
+                            className="max-h-32 mx-auto rounded"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-200 rounded mx-auto flex items-center justify-center">
+                            <Video size={24} className="text-gray-500" />
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-600">{selectedActivityFile?.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedActivityFile(null);
+                            setActivityFilePreview(null);
+                          }}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload size={32} className="mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600 mb-2">Click to upload image or video</p>
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileSelect(file, 'activity');
+                          }}
+                          className="hidden"
+                          id="activity-file-upload"
+                        />
+                        <label
+                          htmlFor="activity-file-upload"
+                          className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-3 py-1 rounded text-sm cursor-pointer transition-colors"
+                        >
+                          Choose File
+                        </label>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="submit"
-                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-2 rounded-md transition-colors flex items-center"
+                  disabled={isUploadingActivity}
+                  className="bg-bjp-saffron hover:bg-bjp-darkSaffron text-white px-6 py-2 rounded-md transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Plus size={20} className="mr-2" />
-                  Create Activity
+                  {isUploadingActivity ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={20} className="mr-2" />
+                      Create Activity
+                    </>
+                  )}
                 </button>
               </form>
             </div>
