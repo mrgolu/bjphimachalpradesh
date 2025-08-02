@@ -430,26 +430,6 @@ ${meeting.agenda}
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-safe">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link to="/live" className="text-bjp-saffron hover:text-bjp-darkSaffron">
-                <div className="w-8 h-8 border-2 border-red-500 rounded-full flex items-center justify-center bg-red-50 animate-pulse">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-                </div>
-              </Link>
-              <Link to="/admin" className="text-gray-600 hover:text-gray-900">
-                <div className="w-8 h-8 border border-current rounded-full flex items-center justify-center">
-                  <span className="text-xs">+</span>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Feed */}
       <div className="max-w-lg mx-auto px-4 py-6 mb-20 md:mb-0">
         {allContent.length === 0 ? (
