@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import AuthButton from './AuthButton';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,12 +75,10 @@ const Navbar: React.FC = () => {
                 </li>
               ))}
             </ul>
-            <AuthButton />
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-4">
-            <AuthButton />
             <button
               className="text-bjp-darkGray p-2 focus:outline-none"
               onClick={toggleMenu}

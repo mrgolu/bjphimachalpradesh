@@ -52,7 +52,6 @@ const AdminPanel: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
 
-  // Form states
   const [postForm, setPostForm] = useState({
     content: '',
     facebookUrl: '',
@@ -146,22 +145,9 @@ const AdminPanel: React.FC = () => {
     attendees: '',
     expectedAttendees: ''
   });
-
   useEffect(() => {
     checkAuth();
-    fetchAllData();
   }, []);
-
-  const checkAuth = async () => {
-    if (!isSupabaseReady || !supabase) return;
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    } catch (error) {
-      console.error('Error checking auth:', error);
-    }
-  };
 
   const fetchAllData = async () => {
     if (!isSupabaseReady || !supabase) {
@@ -188,28 +174,6 @@ const AdminPanel: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (activitiesError) {
-        console.error('Error fetching activities:', activitiesError);
-      } else {
-        setActivities(activitiesData || []);
-      }
-
-      // Fetch meetings
-      const { data: meetingsData, error: meetingsError } = await supabase
-        .from('meetings')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (meetingsError) {
-        console.error('Error fetching meetings:', meetingsError);
-      } else {
-        setMeetings(meetingsData || []);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handlePostSubmit = async (e: React.FormEvent) => {
