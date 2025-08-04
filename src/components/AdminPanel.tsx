@@ -179,8 +179,8 @@ const AdminPanel: React.FC = () => {
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSupabaseReady || !supabase || !user) {
-      toast.error('Please sign in to create posts');
+    if (!isSupabaseReady || !supabase) {
+      toast.error('Database not configured');
       return;
     }
 
@@ -206,8 +206,7 @@ const AdminPanel: React.FC = () => {
           image_url: imageUrl,
           facebook_url: postForm.facebookUrl.trim() || null,
           instagram_url: postForm.instagramUrl.trim() || null,
-          twitter_url: postForm.twitterUrl.trim() || null,
-          user_id: user.id
+          twitter_url: postForm.twitterUrl.trim() || null
         }])
         .select()
         .single();
