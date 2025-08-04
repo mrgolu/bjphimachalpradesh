@@ -533,15 +533,6 @@ const LiveVideo: React.FC = () => {
                     }`}>
                       {session.status.toUpperCase()}
                     </span>
-                    {user && (
-                      <button
-                        onClick={() => handleDeleteSession(session.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Delete session"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
                   </div>
                 </div>
                 {session.meeting_link && (

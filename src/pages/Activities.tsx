@@ -214,20 +214,6 @@ Coordinator: ${activity.coordinator}
                       }`}>
                         {activity.type}
                       </span>
-                      {user && (
-                        <button
-                          onClick={() => handleDeleteActivity(activity.id)}
-                          disabled={deletingActivities.has(activity.id)}
-                          className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
-                          title="Delete activity"
-                        >
-                          {deletingActivities.has(activity.id) ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
-                          ) : (
-                            <Trash2 size={16} />
-                          )}
-                        </button>
-                      )}
                     </div>
                   </div>
                   <div className="space-y-2 mb-4">

@@ -452,8 +452,6 @@ ${meeting.agenda}
               return renderPostCard(item);
             } else if (item.type === 'activity') {
               return renderActivityCard(item);
-            } else if (item.type === 'meeting') {
-              return renderMeetingCard(item);
             }
             return null;
           })

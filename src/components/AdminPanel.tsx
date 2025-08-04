@@ -179,8 +179,8 @@ const AdminPanel: React.FC = () => {
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSupabaseReady || !supabase) {
-      toast.error('Database not configured');
+    if (!isSupabaseReady || !supabase || !user) {
+      toast.error('Please sign in to create posts');
       return;
     }
 
@@ -206,7 +206,8 @@ const AdminPanel: React.FC = () => {
           image_url: imageUrl,
           facebook_url: postForm.facebookUrl.trim() || null,
           instagram_url: postForm.instagramUrl.trim() || null,
-          twitter_url: postForm.twitterUrl.trim() || null
+          twitter_url: postForm.twitterUrl.trim() || null,
+          user_id: user.id
         }])
         .select()
         .single();
@@ -546,15 +547,13 @@ const AdminPanel: React.FC = () => {
           >
             <BarChart3 size={20} className="inline mr-2" />
             Analytics
-          </button>
-        </nav>
       </div>
 
       {/* Tab Content */}
       <div className="p-6">
         {activeTab === 'posts' && (
           <div className="space-y-6">
-            <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <h3 className="text-lg font-semibold text-bjp-darkGray mb-4">Create New Post</h3>
               <form onSubmit={handlePostSubmit} className="space-y-4">
                 <div>
@@ -1202,8 +1201,6 @@ const AdminPanel: React.FC = () => {
                     </div>
                   ))}
               </div>
-            </div>
-          </div>
         )}
       </div>
     </div>

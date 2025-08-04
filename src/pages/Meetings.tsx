@@ -324,21 +324,6 @@ ${meeting.title}
                     
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2">
-                      {user && (
-                        <button
-                          onClick={() => handleDeleteMeeting(meeting.id)}
-                          disabled={deletingMeetings.has(meeting.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors flex items-center disabled:opacity-50"
-                          title="Delete meeting"
-                        >
-                          {deletingMeetings.has(meeting.id) ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          ) : (
-                            <Trash2 size={20} className="mr-2" />
-                          )}
-                          Delete
-                        </button>
-                      )}
                       <a
                         href={meeting.meeting_link}
                         target="_blank"
