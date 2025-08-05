@@ -213,11 +213,24 @@ ${meeting.agenda}
       {/* Post Image */}
       {post.image_url && (
         <div className="relative">
-          <img 
-            src={post.image_url} 
-            alt="Post content" 
-            className="w-full h-96 object-cover"
-          />
+          {post.image_url.startsWith('data:video/') ? (
+            <video 
+              src={post.image_url} 
+              controls
+              className="w-full h-96 object-cover"
+              preload="metadata"
+            />
+          ) : (
+            <img 
+              src={post.image_url} 
+              alt="Post content" 
+              className="w-full h-96 object-cover"
+              onError={(e) => {
+                console.error('Image failed to load:', post.image_url);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -294,11 +307,24 @@ ${meeting.agenda}
       {/* Activity Image */}
       {activity.image_url && (
         <div className="relative">
-          <img 
-            src={activity.image_url} 
-            alt={activity.title} 
-            className="w-full h-96 object-cover"
-          />
+          {activity.image_url.startsWith('data:video/') ? (
+            <video 
+              src={activity.image_url} 
+              controls
+              className="w-full h-96 object-cover"
+              preload="metadata"
+            />
+          ) : (
+            <img 
+              src={activity.image_url} 
+              alt={activity.title} 
+              className="w-full h-96 object-cover"
+              onError={(e) => {
+                console.error('Image failed to load:', activity.image_url);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          )}
         </div>
       )}
 

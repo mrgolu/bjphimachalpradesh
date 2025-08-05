@@ -69,9 +69,12 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       let imageUrl = null;
       
       if (postFile) {
-        // In a real implementation, you would upload to Supabase Storage
-        // For now, we'll use a placeholder URL
-        imageUrl = `https://via.placeholder.com/400x300?text=${encodeURIComponent(postFile.name)}`;
+        // Convert file to base64 data URL for immediate display
+        const reader = new FileReader();
+        imageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(postFile);
+        });
       }
 
       const { error } = await supabase
@@ -108,8 +111,12 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       let imageUrl = null;
       
       if (activityFile) {
-        // In a real implementation, you would upload to Supabase Storage
-        imageUrl = `https://via.placeholder.com/400x300?text=${encodeURIComponent(activityFile.name)}`;
+        // Convert file to base64 data URL for immediate display
+        const reader = new FileReader();
+        imageUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(activityFile);
+        });
       }
 
       const { error } = await supabase

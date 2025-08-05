@@ -195,11 +195,26 @@ Coordinator: ${activity.coordinator}
             {activities.map((activity) => (
               <div key={activity.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 {activity.image_url && (
-                  <img
-                    src={activity.image_url}
-                    alt={activity.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div className="relative">
+                    {activity.image_url.startsWith('data:video/') ? (
+                      <video 
+                        src={activity.image_url} 
+                        controls
+                        className="w-full h-48 object-cover"
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={activity.image_url}
+                        alt={activity.title}
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          console.error('Image failed to load:', activity.image_url);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
                 )}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
