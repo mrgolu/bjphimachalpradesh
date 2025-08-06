@@ -42,10 +42,25 @@ interface Meeting {
   created_at: string;
 }
 
+interface LiveSession {
+  id: string;
+  title: string;
+  description?: string;
+  host_name: string;
+  participants: string[];
+  start_time: string | null;
+  end_time: string | null;
+  status: 'scheduled' | 'live' | 'ended';
+  viewer_count: number;
+  meeting_link?: string;
+  created_at: string;
+}
+
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper function to detect if URL is an external video link
@@ -180,6 +195,18 @@ const Home: React.FC = () => {
       } else {
         setMeetings(meetingsData || []);
       }
+
+      // Fetch live sessions
+      const { data: liveSessionsData, error: liveSessionsError } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (liveSessionsError) {
+        console.error('Error fetching live sessions:', liveSessionsError);
+      } else {
+        setLiveSessions(liveSessionsData || []);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -275,6 +302,81 @@ ${meeting.agenda}
 
     shareOnWhatsApp(message);
   };
+
+  const renderLiveSessionCard = (liveSession: LiveSession) => (
+    <div key={`live-${liveSession.id}`} className="bg-white border border-gray-200 rounded-lg mb-6 shadow-sm">
+      {/* Live Session Header */}
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+          </div>
+          <div className="ml-3">
+            <h3 className="font-semibold text-gray-900">BJP Himachal Pradesh</h3>
+            <p className="text-gray-500 text-sm">{getTimeAgo(liveSession.created_at)}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            liveSession.status === 'live' 
+              ? 'bg-red-100 text-red-800 animate-pulse'
+              : liveSession.status === 'scheduled'
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-800'
+          }`}>
+            {liveSession.status === 'live' ? '🔴 LIVE' : liveSession.status.toUpperCase()}
+          </span>
+          {liveSession.status === 'live' && (
+            <span className="text-sm text-gray-600 flex items-center">
+              👥 {liveSession.viewer_count}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Live Session Content */}
+      <div className="p-4">
+        <div className="mb-3">
+          <h4 className="font-semibold text-gray-900 mb-2">{liveSession.title}</h4>
+          {liveSession.description && (
+            <p className="text-gray-900 mb-3">{liveSession.description}</p>
+          )}
+          
+          <div className="space-y-2 text-sm text-gray-600">
+            <p className="text-gray-500">
+              <strong>Host:</strong> {liveSession.host_name}
+            </p>
+            {liveSession.start_time && (
+              <p className="text-gray-500">
+                <strong>Scheduled:</strong> {new Date(liveSession.start_time).toLocaleString()}
+              </p>
+            )}
+            {liveSession.participants.length > 0 && (
+              <p className="text-gray-500">
+                <strong>Participants:</strong> {liveSession.participants.join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Join Live Session Button */}
+        {liveSession.meeting_link && (
+          <a
+            href={liveSession.meeting_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-block px-4 py-2 rounded-md transition-colors text-sm font-medium ${
+              liveSession.status === 'live'
+                ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                : 'bg-bjp-saffron hover:bg-bjp-darkSaffron text-white'
+            }`}
+          >
+            {liveSession.status === 'live' ? '🔴 Join Live Now' : 'Join Session'}
+          </a>
+        )}
+      </div>
+    </div>
+  );
 
   const renderPostCard = (post: Post) => (
     <div key={`post-${post.id}`} className="bg-white border border-gray-200 rounded-lg mb-6 shadow-sm">
@@ -501,7 +603,8 @@ ${meeting.agenda}
   const allContent = [
     ...posts.map(post => ({ ...post, type: 'post', sortDate: post.created_at })),
     ...activities.map(activity => ({ ...activity, type: 'activity', sortDate: activity.created_at })),
-    ...meetings.map(meeting => ({ ...meeting, type: 'meeting', sortDate: meeting.created_at }))
+    ...meetings.map(meeting => ({ ...meeting, type: 'meeting', sortDate: meeting.created_at })),
+    ...liveSessions.map(liveSession => ({ ...liveSession, type: 'live', sortDate: liveSession.created_at }))
   ].sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime());
 
   return (
@@ -528,6 +631,8 @@ ${meeting.agenda}
               return renderPostCard(item);
             } else if (item.type === 'activity') {
               return renderActivityCard(item);
+            } else if (item.type === 'live') {
+              return renderLiveSessionCard(item);
             }
             return null;
           })
