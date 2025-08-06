@@ -39,25 +39,20 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       return;
     }
 
-    if (type === 'post') {
-      setPostFile(file);
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => setPostPreview(e.target?.result as string);
-        reader.readAsDataURL(file);
+    // Convert file to data URL for persistent storage
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      
+      if (type === 'post') {
+        setPostFile(file);
+        setPostPreview(dataUrl.startsWith('data:video/') ? 'video' : dataUrl);
       } else {
-        setPostPreview('video');
+        setActivityFile(file);
+        setActivityPreview(dataUrl.startsWith('data:video/') ? 'video' : dataUrl);
       }
-    } else {
-      setActivityFile(file);
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => setActivityPreview(e.target?.result as string);
-        reader.readAsDataURL(file);
-      } else {
-        setActivityPreview('video');
-      }
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handlePostSubmit = async (e: React.FormEvent) => {
@@ -69,7 +64,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       let imageUrl = null;
       
       if (postFile) {
-        // Convert file to base64 data URL for immediate display
+        // Convert file to data URL for persistent storage
         const reader = new FileReader();
         imageUrl = await new Promise((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
@@ -83,7 +78,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
           {
             content: postContent,
             image_url: imageUrl,
-            user_id: '00000000-0000-0000-0000-000000000000' // Placeholder user ID
+            user_id: '00000000-0000-0000-0000-000000000000'
           }
         ]);
 
@@ -111,7 +106,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       let imageUrl = null;
       
       if (activityFile) {
-        // Convert file to base64 data URL for immediate display
+        // Convert file to data URL for persistent storage
         const reader = new FileReader();
         imageUrl = await new Promise((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
@@ -132,7 +127,7 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
             coordinator: activityCoordinator,
             participants: activityParticipants,
             image_url: imageUrl,
-            user_id: '00000000-0000-0000-0000-000000000000' // Placeholder user ID
+            user_id: '00000000-0000-0000-0000-000000000000'
           }
         ]);
 
@@ -155,6 +150,39 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       alert('Error creating activity');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileUploadOld = (file: File, type: 'post' | 'activity') => {
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image or video file');
+      return;
+    }
+
+    if (type === 'post') {
+      setPostFile(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => setPostPreview(e.target?.result as string);
+        reader.readAsDataURL(file);
+      } else {
+        setPostPreview('video');
+      }
+    } else {
+      setActivityFile(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => setActivityPreview(e.target?.result as string);
+        reader.readAsDataURL(file);
+      } else {
+        setActivityPreview('video');
+      }
     }
   };
 

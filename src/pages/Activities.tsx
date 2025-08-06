@@ -63,6 +63,12 @@ const Activities: React.FC = () => {
 
   // Helper function to render media content
   const renderMediaContent = (url: string, alt: string, className: string) => {
+    // Skip rendering if URL is invalid blob URL
+    if (url.startsWith('blob:')) {
+      console.warn('Skipping invalid blob URL:', url);
+      return null;
+    }
+    
     // Check if it's a local video data URL
     if (url.startsWith('data:video/')) {
       return (
@@ -96,10 +102,7 @@ const Activities: React.FC = () => {
         src={url} 
         alt={alt} 
         className={className}
-        onError={(e) => {
-          console.error('Image failed to load:', url);
-          e.currentTarget.style.display = 'none';
-        }}
+        onError={(e) => e.currentTarget.style.display = 'none'}
       />
     );
   };
