@@ -23,6 +23,87 @@ const Activities: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [deletingActivities, setDeletingActivities] = useState<Set<string>>(new Set());
 
+  // Helper function to detect if URL is an external video link
+  const isExternalVideoUrl = (url: string): boolean => {
+    const videoPatterns = [
+      /youtube\.com\/watch/,
+      /youtu\.be\//,
+      /vimeo\.com\//,
+      /facebook\.com\/watch/,
+      /fb\.watch\//,
+      /instagram\.com\/p\//,
+      /instagram\.com\/reel\//,
+      /twitter\.com\/.*\/status\//,
+      /x\.com\/.*\/status\//
+    ];
+    return videoPatterns.some(pattern => pattern.test(url));
+  };
+
+  // Helper function to get embed URL for external videos
+  const getEmbedUrl = (url: string): string => {
+    // YouTube
+    if (url.includes('youtube.com/watch')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    // Vimeo
+    if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+      return `https://player.vimeo.com/video/${videoId}`;
+    }
+    
+    // For other platforms, return original URL (may not embed properly)
+    return url;
+  };
+
+  // Helper function to render media content
+  const renderMediaContent = (url: string, alt: string, className: string) => {
+    // Check if it's a local video data URL
+    if (url.startsWith('data:video/')) {
+      return (
+        <video 
+          src={url} 
+          controls
+          className={className}
+          preload="metadata"
+        />
+      );
+    }
+    
+    // Check if it's an external video URL
+    if (isExternalVideoUrl(url)) {
+      const embedUrl = getEmbedUrl(url);
+      return (
+        <iframe
+          src={embedUrl}
+          className={className}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title={alt}
+        />
+      );
+    }
+    
+    // Default to image
+    return (
+      <img 
+        src={url} 
+        alt={alt} 
+        className={className}
+        onError={(e) => {
+          console.error('Image failed to load:', url);
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+    );
+  };
+
   useEffect(() => {
     checkAuth();
     fetchActivities();
@@ -196,24 +277,7 @@ Coordinator: ${activity.coordinator}
               <div key={activity.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 {activity.image_url && (
                   <div className="relative">
-                    {activity.image_url.startsWith('data:video/') ? (
-                      <video 
-                        src={activity.image_url} 
-                        controls
-                        className="w-full h-48 object-cover"
-                        preload="metadata"
-                      />
-                    ) : (
-                      <img
-                        src={activity.image_url}
-                        alt={activity.title}
-                        className="w-full h-48 object-cover"
-                        onError={(e) => {
-                          console.error('Image failed to load:', activity.image_url);
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    )}
+                    {renderMediaContent(activity.image_url, activity.title, "w-full h-48 object-cover")}
                   </div>
                 )}
                 <div className="p-6">
