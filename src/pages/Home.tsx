@@ -603,7 +603,6 @@ ${meeting.agenda}
   const allContent = [
     ...posts.map(post => ({ ...post, type: 'post', sortDate: post.created_at })),
     ...activities.map(activity => ({ ...activity, type: 'activity', sortDate: activity.created_at })),
-    ...meetings.map(meeting => ({ ...meeting, type: 'meeting', sortDate: meeting.created_at })),
     ...liveSessions.map(liveSession => ({ ...liveSession, type: 'live', sortDate: liveSession.created_at }))
   ].sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime());
 
