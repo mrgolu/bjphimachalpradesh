@@ -14,6 +14,9 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const [postContent, setPostContent] = useState('');
   const [postFile, setPostFile] = useState<File | null>(null);
   const [postPreview, setPostPreview] = useState<string | null>(null);
+  const [postFacebookUrl, setPostFacebookUrl] = useState('');
+  const [postInstagramUrl, setPostInstagramUrl] = useState('');
+  const [postTwitterUrl, setPostTwitterUrl] = useState('');
 
   // Activity form state
   const [activityTitle, setActivityTitle] = useState('');
@@ -78,6 +81,9 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
           {
             content: postContent,
             image_url: imageUrl,
+            facebook_url: postFacebookUrl || null,
+            instagram_url: postInstagramUrl || null,
+            twitter_url: postTwitterUrl || null,
             user_id: '00000000-0000-0000-0000-000000000000'
           }
         ]);
@@ -88,6 +94,9 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       setPostContent('');
       setPostFile(null);
       setPostPreview(null);
+      setPostFacebookUrl('');
+      setPostInstagramUrl('');
+      setPostTwitterUrl('');
       alert('Post created successfully!');
     } catch (error) {
       console.error('Error creating post:', error);
