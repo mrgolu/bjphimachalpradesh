@@ -250,6 +250,50 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                 />
               </div>
 
+              {/* Social Media URLs */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700">Social Media Links (Optional)</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Facebook URL
+                  </label>
+                  <input
+                    type="url"
+                    value={postFacebookUrl}
+                    onChange={(e) => setPostFacebookUrl(e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instagram URL
+                  </label>
+                  <input
+                    type="url"
+                    value={postInstagramUrl}
+                    onChange={(e) => setPostInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Twitter URL
+                  </label>
+                  <input
+                    type="url"
+                    value={postTwitterUrl}
+                    onChange={(e) => setPostTwitterUrl(e.target.value)}
+                    placeholder="https://twitter.com/... or https://x.com/..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
