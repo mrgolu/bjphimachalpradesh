@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseReady } from '../lib/supabase';
 import { Plus, Upload, X, Image, Video } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -62,6 +63,12 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     e.preventDefault();
     if (!postContent.trim()) return;
 
+    // Check if Supabase is configured
+    if (!isSupabaseReady || !supabase) {
+      toast.error('Database not configured. Please connect to Supabase first.');
+      return;
+    }
+
     setLoading(true);
     try {
       let imageUrl = null;
@@ -84,7 +91,6 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
             facebook_url: postFacebookUrl || null,
             instagram_url: postInstagramUrl || null,
             twitter_url: postTwitterUrl || null,
-            user_id: '00000000-0000-0000-0000-000000000000'
           }
         ]);
 
@@ -97,10 +103,13 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       setPostFacebookUrl('');
       setPostInstagramUrl('');
       setPostTwitterUrl('');
-      alert('Post created successfully!');
+      toast.success('Post created successfully!');
+      
+      // Refresh the page to show the new post
+      window.location.reload();
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Error creating post');
+      toast.error('Error creating post: ' + (error as any).message);
     } finally {
       setLoading(false);
     }
@@ -109,6 +118,12 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const handleActivitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activityTitle.trim() || !activityType.trim() || !activityStartDate) return;
+
+    // Check if Supabase is configured
+    if (!isSupabaseReady || !supabase) {
+      toast.error('Database not configured. Please connect to Supabase first.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -136,7 +151,6 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
             coordinator: activityCoordinator,
             participants: activityParticipants,
             image_url: imageUrl,
-            user_id: '00000000-0000-0000-0000-000000000000'
           }
         ]);
 
@@ -153,10 +167,13 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       setActivityParticipants('');
       setActivityFile(null);
       setActivityPreview(null);
-      alert('Activity created successfully!');
+      toast.success('Activity created successfully!');
+      
+      // Refresh the page to show the new activity
+      window.location.reload();
     } catch (error) {
       console.error('Error creating activity:', error);
-      alert('Error creating activity');
+      toast.error('Error creating activity: ' + (error as any).message);
     } finally {
       setLoading(false);
     }
