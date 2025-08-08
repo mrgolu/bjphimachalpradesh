@@ -82,17 +82,21 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
         });
       }
 
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const postData = {
+        content: postContent,
+        image_url: imageUrl,
+        facebook_url: postFacebookUrl || null,
+        instagram_url: postInstagramUrl || null,
+        twitter_url: postTwitterUrl || null,
+        user_id: session?.user?.id || null,
+      };
+
       const { error } = await supabase
         .from('posts')
-        .insert([
-          {
-            content: postContent,
-            image_url: imageUrl,
-            facebook_url: postFacebookUrl || null,
-            instagram_url: postInstagramUrl || null,
-            twitter_url: postTwitterUrl || null,
-          }
-        ]);
+        .insert([postData]);
 
       if (error) throw error;
 
