@@ -142,21 +142,25 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
         });
       }
 
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const activityData = {
+        title: activityTitle,
+        type: activityType,
+        start_date: activityStartDate,
+        end_date: activityEndDate || null,
+        location: activityLocation,
+        description: activityDescription,
+        coordinator: activityCoordinator,
+        participants: activityParticipants,
+        image_url: imageUrl,
+        user_id: session?.user?.id || null,
+      };
+
       const { error } = await supabase
         .from('activities')
-        .insert([
-          {
-            title: activityTitle,
-            type: activityType,
-            start_date: activityStartDate,
-            end_date: activityEndDate || null,
-            location: activityLocation,
-            description: activityDescription,
-            coordinator: activityCoordinator,
-            participants: activityParticipants,
-            image_url: imageUrl,
-          }
-        ]);
+        .insert([activityData]);
 
       if (error) throw error;
 
