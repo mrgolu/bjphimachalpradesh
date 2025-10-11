@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle, Heart } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle, Heart, Share2, Download } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
+import Comments from '../components/Comments';
 
 interface Post {
   id: string;
@@ -447,7 +448,30 @@ ${meeting.agenda}
             )}
           </div>
         )}
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => sharePostOnWhatsApp(post)}
+            className="flex items-center text-bjp-green hover:text-bjp-darkGreen transition-colors text-sm font-medium"
+          >
+            <Share2 size={18} className="mr-2" />
+            Share
+          </button>
+          {post.image_url && (
+            <a
+              href={post.image_url}
+              download
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            >
+              <Download size={18} className="mr-2" />
+              Download
+            </a>
+          )}
+        </div>
       </div>
+
+      <Comments contentType="post" contentId={post.id} />
     </div>
   );
 
@@ -504,7 +528,30 @@ ${meeting.agenda}
             </p>
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => shareActivityOnWhatsApp(activity)}
+            className="flex items-center text-bjp-green hover:text-bjp-darkGreen transition-colors text-sm font-medium"
+          >
+            <Share2 size={18} className="mr-2" />
+            Share
+          </button>
+          {activity.image_url && (
+            <a
+              href={activity.image_url}
+              download
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+            >
+              <Download size={18} className="mr-2" />
+              Download
+            </a>
+          )}
+        </div>
       </div>
+
+      <Comments contentType="activity" contentId={activity.id} />
     </div>
   );
 
@@ -554,7 +601,19 @@ ${meeting.agenda}
           Join Meeting
         </a>
 
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => shareMeetingOnWhatsApp(meeting)}
+            className="flex items-center text-bjp-green hover:text-bjp-darkGreen transition-colors text-sm font-medium"
+          >
+            <Share2 size={18} className="mr-2" />
+            Share
+          </button>
+        </div>
       </div>
+
+      <Comments contentType="meeting" contentId={meeting.id} />
     </div>
   );
 
