@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle, Heart, Share2, Download } from 'lucide-react';
+import { MoreHorizontal, Clock, MapPin, Calendar, AlertCircle, Heart, Share2, Download, FileText, Camera } from 'lucide-react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
 import Comments from '../components/Comments';
 
@@ -14,6 +14,12 @@ interface Post {
   created_at: string;
 }
 
+interface ActivityFile {
+  url: string;
+  type: 'image' | 'pdf';
+  name: string;
+}
+
 interface Activity {
   id: string;
   title: string;
@@ -25,6 +31,7 @@ interface Activity {
   coordinator: string;
   participants: string;
   image_url: string | null;
+  files?: ActivityFile[];
   created_at: string;
 }
 
@@ -528,6 +535,36 @@ ${meeting.agenda}
             </p>
           </div>
         </div>
+
+        {activity.files && activity.files.length > 0 && (
+          <div className="mb-3 border-t border-gray-100 pt-3">
+            <p className="text-xs font-medium text-gray-600 mb-2">Attached Files:</p>
+            <div className="space-y-1">
+              {activity.files.map((file, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded text-xs">
+                  {file.type === 'pdf' ? (
+                    <div className="flex items-center">
+                      <FileText size={14} className="text-red-600 mr-2" />
+                      <span className="text-gray-700">{file.name}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Camera size={14} className="text-blue-600 mr-2" />
+                      <span className="text-gray-700">{file.name}</span>
+                    </div>
+                  )}
+                  <a
+                    href={file.url}
+                    download
+                    className={file.type === 'pdf' ? 'text-red-600 hover:text-red-700' : 'text-blue-600 hover:text-blue-700'}
+                  >
+                    <Download size={14} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center gap-4 pt-3 border-t border-gray-100">

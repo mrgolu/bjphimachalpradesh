@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, Share2, Camera, Upload, X, MessageCircle, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Share2, Camera, Upload, X, MessageCircle, Trash2, FileText, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'react-toastify';
+
+interface ActivityFile {
+  url: string;
+  type: 'image' | 'pdf';
+  name: string;
+}
 
 interface Activity {
   id: string;
@@ -14,6 +20,7 @@ interface Activity {
   coordinator: string;
   participants: string;
   image_url?: string;
+  files?: ActivityFile[];
   created_at: string;
 }
 
@@ -313,12 +320,56 @@ Coordinator: ${activity.coordinator}
                     </p>
                   </div>
                   <p className="text-gray-700 mb-4">{activity.description}</p>
+
+                  {activity.files && activity.files.length > 0 && (
+                    <div className="mb-4 border-t border-gray-200 pt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Attached Files:</p>
+                      <div className="space-y-2">
+                        {activity.files.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                            {file.type === 'pdf' ? (
+                              <>
+                                <div className="flex items-center">
+                                  <FileText size={16} className="text-red-600 mr-2" />
+                                  <span className="text-sm text-gray-700">{file.name}</span>
+                                </div>
+                                <a
+                                  href={file.url}
+                                  download
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Download PDF"
+                                >
+                                  <Download size={16} />
+                                </a>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center">
+                                  <Camera size={16} className="text-blue-600 mr-2" />
+                                  <span className="text-sm text-gray-700">{file.name}</span>
+                                </div>
+                                <a
+                                  href={file.url}
+                                  download
+                                  className="text-blue-600 hover:text-blue-700"
+                                  title="Download photo"
+                                >
+                                  <Download size={16} />
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">
                       Coordinator: {activity.coordinator}
                     </span>
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => shareOnWhatsApp(activity)}
                         className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full transition-colors text-sm"
                         title="Share on WhatsApp"
@@ -326,7 +377,7 @@ Coordinator: ${activity.coordinator}
                         <MessageCircle size={16} className="mr-1" />
                         WhatsApp
                       </button>
-                      <button 
+                      <button
                         onClick={() => shareActivityDetails(activity)}
                         className="flex items-center text-bjp-saffron hover:text-bjp-darkSaffron transition-colors"
                         title="Share activity"
