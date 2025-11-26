@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
-import { Plus, Upload, X, Image, Video } from 'lucide-react';
+import { Plus, Upload, X, Image, Video, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface AdminPanelProps {
@@ -8,7 +8,7 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ onClose }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'post' | 'activity'>('post');
+  const [activeTab, setActiveTab] = useState<'post' | 'activity' | 'meeting' | 'gallery'>('post');
   const [loading, setLoading] = useState(false);
 
   // Post form state
@@ -31,7 +31,28 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const [activityFile, setActivityFile] = useState<File | null>(null);
   const [activityPreview, setActivityPreview] = useState<string | null>(null);
 
-  const handleFileUpload = (file: File, type: 'post' | 'activity') => {
+  // Meeting form state
+  const [meetingTitle, setMeetingTitle] = useState('');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingTime, setMeetingTime] = useState('');
+  const [meetingOrganizer, setMeetingOrganizer] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [meetingNumber, setMeetingNumber] = useState('');
+  const [meetingPassword, setMeetingPassword] = useState('');
+  const [meetingAgenda, setMeetingAgenda] = useState('');
+  const [meetingExpectedAttendees, setMeetingExpectedAttendees] = useState('');
+
+  // Gallery form state
+  const [galleryTitle, setGalleryTitle] = useState('');
+  const [galleryDescription, setGalleryDescription] = useState('');
+  const [galleryType, setGalleryType] = useState('image');
+  const [galleryCategory, setGalleryCategory] = useState('Other');
+  const [galleryFile, setGalleryFile] = useState<File | null>(null);
+  const [galleryPreview, setGalleryPreview] = useState<string | null>(null);
+  const [galleryTags, setGalleryTags] = useState('');
+  const [galleryDate, setGalleryDate] = useState('');
+
+  const handleFileUpload = (file: File, type: 'post' | 'activity' | 'gallery') => {
     if (file.size > 10 * 1024 * 1024) {
       alert('File size must be less than 10MB');
       return;
@@ -47,13 +68,16 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      
+
       if (type === 'post') {
         setPostFile(file);
         setPostPreview(dataUrl.startsWith('data:video/') ? 'video' : dataUrl);
-      } else {
+      } else if (type === 'activity') {
         setActivityFile(file);
         setActivityPreview(dataUrl.startsWith('data:video/') ? 'video' : dataUrl);
+      } else if (type === 'gallery') {
+        setGalleryFile(file);
+        setGalleryPreview(dataUrl.startsWith('data:video/') ? 'video' : dataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -187,36 +211,112 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     }
   };
 
-  const handleFileUploadOld = (file: File, type: 'post' | 'activity') => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
+  const handleMeetingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!meetingTitle.trim() || !meetingDate || !meetingTime) return;
+
+    if (!isSupabaseReady || !supabase) {
+      toast.error('Database not configured. Please connect to Supabase first.');
       return;
     }
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image or video file');
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const meetingData = {
+        title: meetingTitle,
+        date: meetingDate,
+        time: meetingTime,
+        organizer: meetingOrganizer,
+        meeting_link: meetingLink,
+        meeting_number: meetingNumber,
+        password: meetingPassword,
+        agenda: meetingAgenda,
+        expected_attendees: meetingExpectedAttendees ? meetingExpectedAttendees.split(',').map(a => a.trim()) : [],
+        user_id: session?.user?.id || null,
+      };
+
+      const { error } = await supabase
+        .from('meetings')
+        .insert([meetingData]);
+
+      if (error) throw error;
+
+      setMeetingTitle('');
+      setMeetingDate('');
+      setMeetingTime('');
+      setMeetingOrganizer('');
+      setMeetingLink('');
+      setMeetingNumber('');
+      setMeetingPassword('');
+      setMeetingAgenda('');
+      setMeetingExpectedAttendees('');
+      toast.success('Meeting created successfully!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      toast.error('Error creating meeting: ' + (error as any).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGallerySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryTitle.trim() || !galleryFile) return;
+
+    if (!isSupabaseReady || !supabase) {
+      toast.error('Database not configured. Please connect to Supabase first.');
       return;
     }
 
-    if (type === 'post') {
-      setPostFile(file);
-      if (file.type.startsWith('image/')) {
+    setLoading(true);
+    try {
+      let fileUrl = null;
+
+      if (galleryFile) {
         const reader = new FileReader();
-        reader.onload = (e) => setPostPreview(e.target?.result as string);
-        reader.readAsDataURL(file);
-      } else {
-        setPostPreview('video');
+        fileUrl = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(galleryFile);
+        });
       }
-    } else {
-      setActivityFile(file);
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => setActivityPreview(e.target?.result as string);
-        reader.readAsDataURL(file);
-      } else {
-        setActivityPreview('video');
-      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const galleryData = {
+        title: galleryTitle,
+        description: galleryDescription,
+        url: fileUrl,
+        type: galleryType,
+        category: galleryCategory,
+        tags: galleryTags ? galleryTags.split(',').map(t => t.trim()) : [],
+        date: galleryDate || new Date().toISOString().split('T')[0],
+        user_id: session?.user?.id || null,
+      };
+
+      const { error } = await supabase
+        .from('gallery_items')
+        .insert([galleryData]);
+
+      if (error) throw error;
+
+      setGalleryTitle('');
+      setGalleryDescription('');
+      setGalleryFile(null);
+      setGalleryPreview(null);
+      setGalleryType('image');
+      setGalleryCategory('Other');
+      setGalleryTags('');
+      setGalleryDate('');
+      toast.success('Gallery item added successfully!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error adding gallery item:', error);
+      toast.error('Error adding gallery item: ' + (error as any).message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,26 +335,46 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
 
         <div className="p-6">
           {/* Tab Navigation */}
-          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg overflow-x-auto">
             <button
               onClick={() => setActiveTab('post')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'post'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Create Post
+              Post
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'activity'
                   ? 'bg-white text-orange-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Create Activity
+              Activity
+            </button>
+            <button
+              onClick={() => setActiveTab('meeting')}
+              className={`py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'meeting'
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Meeting
+            </button>
+            <button
+              onClick={() => setActiveTab('gallery')}
+              className={`py-2 px-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'gallery'
+                  ? 'bg-white text-orange-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Gallery
             </button>
           </div>
 
@@ -564,6 +684,301 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                   <>
                     <Plus className="w-5 h-5 mr-2" />
                     Create Activity
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Meeting Creation Form */}
+          {activeTab === 'meeting' && (
+            <form onSubmit={handleMeetingSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Meeting Title
+                  </label>
+                  <input
+                    type="text"
+                    value={meetingTitle}
+                    onChange={(e) => setMeetingTitle(e.target.value)}
+                    placeholder="Meeting title"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Organizer
+                  </label>
+                  <input
+                    type="text"
+                    value={meetingOrganizer}
+                    onChange={(e) => setMeetingOrganizer(e.target.value)}
+                    placeholder="Organizer name"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={meetingDate}
+                    onChange={(e) => setMeetingDate(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    value={meetingTime}
+                    onChange={(e) => setMeetingTime(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Agenda
+                </label>
+                <textarea
+                  value={meetingAgenda}
+                  onChange={(e) => setMeetingAgenda(e.target.value)}
+                  placeholder="Meeting agenda"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Meeting Link
+                  </label>
+                  <input
+                    type="url"
+                    value={meetingLink}
+                    onChange={(e) => setMeetingLink(e.target.value)}
+                    placeholder="https://zoom.us/..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Meeting Number
+                  </label>
+                  <input
+                    type="text"
+                    value={meetingNumber}
+                    onChange={(e) => setMeetingNumber(e.target.value)}
+                    placeholder="Meeting ID"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="text"
+                  value={meetingPassword}
+                  onChange={(e) => setMeetingPassword(e.target.value)}
+                  placeholder="Meeting password"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Expected Attendees (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={meetingExpectedAttendees}
+                  onChange={(e) => setMeetingExpectedAttendees(e.target.value)}
+                  placeholder="name1@email.com, name2@email.com"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !meetingTitle.trim() || !meetingDate || !meetingTime}
+                className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Create Meeting
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Gallery Item Form */}
+          {activeTab === 'gallery' && (
+            <form onSubmit={handleGallerySubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gallery Title
+                </label>
+                <input
+                  type="text"
+                  value={galleryTitle}
+                  onChange={(e) => setGalleryTitle(e.target.value)}
+                  placeholder="Gallery item title"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={galleryDescription}
+                  onChange={(e) => setGalleryDescription(e.target.value)}
+                  placeholder="Item description"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={galleryType}
+                    onChange={(e) => setGalleryType(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    value={galleryCategory}
+                    onChange={(e) => setGalleryCategory(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="Event">Event</option>
+                    <option value="Campaign">Campaign</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={galleryTags}
+                    onChange={(e) => setGalleryTags(e.target.value)}
+                    placeholder="tag1, tag2, tag3"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={galleryDate}
+                    onChange={(e) => setGalleryDate(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload {galleryType === 'image' ? 'Image' : 'Video'}
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-400 transition-colors">
+                  <input
+                    type="file"
+                    accept={galleryType === 'image' ? 'image/*' : 'video/*'}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'gallery');
+                    }}
+                    className="hidden"
+                    id="gallery-file-upload"
+                  />
+                  <label htmlFor="gallery-file-upload" className="cursor-pointer">
+                    {galleryPreview ? (
+                      <div className="space-y-2">
+                        {galleryPreview === 'video' ? (
+                          <Video className="w-12 h-12 text-orange-500 mx-auto" />
+                        ) : (
+                          <img src={galleryPreview} alt="Preview" className="w-32 h-32 object-cover mx-auto rounded" />
+                        )}
+                        <p className="text-sm text-gray-600">{galleryFile?.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGalleryFile(null);
+                            setGalleryPreview(null);
+                          }}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {galleryType === 'image' ? (
+                          <Image className="w-12 h-12 text-gray-400 mx-auto" />
+                        ) : (
+                          <Video className="w-12 h-12 text-gray-400 mx-auto" />
+                        )}
+                        <p className="text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-sm text-gray-500">Files up to 10MB</p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !galleryTitle.trim() || !galleryFile}
+                className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add to Gallery
                   </>
                 )}
               </button>
