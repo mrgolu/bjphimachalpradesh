@@ -123,11 +123,13 @@ const LiveVideo: React.FC = () => {
 
       if (error) {
         console.error('Error fetching live sessions:', error);
+        setLiveSessions([]);
       } else {
         setLiveSessions(data || []);
       }
     } catch (error) {
       console.error('Error fetching live sessions:', error);
+      setLiveSessions([]);
     }
   };
 

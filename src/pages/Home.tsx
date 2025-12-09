@@ -205,15 +205,21 @@ const Home: React.FC = () => {
       }
 
       // Fetch live sessions
-      const { data: liveSessionsData, error: liveSessionsError } = await supabase
-        .from('live_sessions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data: liveSessionsData, error: liveSessionsError } = await supabase
+          .from('live_sessions')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (liveSessionsError) {
-        console.error('Error fetching live sessions:', liveSessionsError);
-      } else {
-        setLiveSessions(liveSessionsData || []);
+        if (liveSessionsError) {
+          console.error('Error fetching live sessions:', liveSessionsError);
+          setLiveSessions([]);
+        } else {
+          setLiveSessions(liveSessionsData || []);
+        }
+      } catch (err) {
+        console.error('Exception fetching live sessions:', err);
+        setLiveSessions([]);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
