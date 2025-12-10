@@ -189,28 +189,43 @@ const LiveVideo: React.FC = () => {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        
-        // Handle different browser behaviors
+
+        // Wait for video to be ready before playing
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, starting playback');
+          const playPromise = videoRef.current?.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.warn('Auto-play failed:', error);
+            });
+          }
+        };
+
+        // Fallback: try playing immediately
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(error => {
-            console.warn('Auto-play failed:', error);
-            // Auto-play failed, user interaction required
+            console.warn('Immediate play failed, waiting for metadata:', error);
           });
         }
       }
 
-      setIsLive(true);
-      setViewerCount(Math.floor(Math.random() * 50) + 10);
-      
-      // Update video and audio states based on actual stream
+      // Get tracks before setting live state
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
-      
+
+      console.log('Video track enabled:', videoTrack?.enabled);
+      console.log('Audio track enabled:', audioTrack?.enabled);
+
       setIsVideoEnabled(videoTrack ? videoTrack.enabled : false);
       setIsAudioEnabled(audioTrack ? audioTrack.enabled : false);
 
-      toast.success('Live stream started successfully!');
+      // Small delay to ensure everything is initialized
+      setTimeout(() => {
+        setIsLive(true);
+        setViewerCount(Math.floor(Math.random() * 50) + 10);
+        toast.success('Live stream started successfully!');
+      }, 100);
     } catch (error: any) {
       console.error('Error starting stream:', error);
       
@@ -377,18 +392,18 @@ const LiveVideo: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative">
           {/* Video Container */}
-          <div className="relative bg-gray-900 aspect-video">
+          <div className="relative bg-black w-full" style={{ paddingBottom: '56.25%' }}>
             {isLive ? (
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="absolute top-0 left-0 w-full h-full object-cover"
                 autoPlay
                 muted
                 playsInline
-                webkit-playsinline="true"
+                style={{ display: 'block', width: '100%', height: '100%' }}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900">
                 {cameraError ? (
                   <div className="text-center p-6">
                     <AlertCircle size={48} className="mx-auto text-red-400 mb-4" />
