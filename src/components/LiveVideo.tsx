@@ -177,38 +177,13 @@ const LiveVideo: React.FC = () => {
         });
       }
 
-      streamRef.current = stream;
-
       console.log('Stream obtained:', stream);
       console.log('Video tracks:', stream.getVideoTracks());
       console.log('Audio tracks:', stream.getAudioTracks());
 
-      if (videoRef.current) {
-        console.log('Video ref exists, setting srcObject');
-        videoRef.current.srcObject = stream;
+      streamRef.current = stream;
 
-        // Ensure video element is visible and has proper dimensions
-        videoRef.current.style.display = 'block';
-
-        // Wait for video to be ready before playing
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, videoHeight:', videoRef.current?.videoHeight, 'videoWidth:', videoRef.current?.videoWidth);
-          if (videoRef.current) {
-            videoRef.current.play().catch(error => {
-              console.error('Play failed after metadata:', error);
-            });
-          }
-        };
-
-        // Try playing immediately
-        videoRef.current.play().catch(error => {
-          console.warn('Initial play attempt failed:', error);
-        });
-      } else {
-        console.error('Video ref is null!');
-      }
-
-      // Get tracks
+      // Get tracks before setting live
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
 
@@ -217,8 +192,26 @@ const LiveVideo: React.FC = () => {
 
       setIsVideoEnabled(videoTrack ? videoTrack.enabled : false);
       setIsAudioEnabled(audioTrack ? audioTrack.enabled : false);
+
+      // Set live FIRST so video element renders
       setIsLive(true);
       setViewerCount(Math.floor(Math.random() * 50) + 10);
+
+      // Then attach stream in a callback after render
+      setTimeout(() => {
+        if (videoRef.current) {
+          console.log('Attaching stream to video element');
+          videoRef.current.srcObject = stream;
+
+          // Play video
+          videoRef.current.play().catch(error => {
+            console.error('Play failed:', error);
+          });
+        } else {
+          console.error('Video ref still null after setIsLive!');
+        }
+      }, 50);
+
       toast.success('Live stream started successfully!');
     } catch (error: any) {
       console.error('Error starting stream:', error);
