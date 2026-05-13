@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
-import { Plus, Upload, X, Image, Video, Link as LinkIcon } from 'lucide-react';
+import { Plus, Upload, X, Image, Video, Link as LinkIcon, CreditCard as Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface AdminPanelProps {
@@ -52,6 +52,50 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
   const [galleryTags, setGalleryTags] = useState('');
   const [galleryDate, setGalleryDate] = useState('');
 
+  // Items list state
+  const [posts, setPosts] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
+  const [expandedActivity, setExpandedActivity] = useState<string | null>(null);
+  const [expandedMeeting, setExpandedMeeting] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [editingActivity, setEditingActivity] = useState<any | null>(null);
+  const [editingMeeting, setEditingMeeting] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'post') fetchPosts();
+    if (activeTab === 'activity') fetchActivities();
+    if (activeTab === 'meeting') fetchMeetings();
+  }, [activeTab]);
+
+  const fetchPosts = async () => {
+    try {
+      const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+
+  const fetchActivities = async () => {
+    try {
+      const { data } = await supabase.from('activities').select('*').order('created_at', { ascending: false });
+      setActivities(data || []);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    }
+  };
+
+  const fetchMeetings = async () => {
+    try {
+      const { data } = await supabase.from('meetings').select('*').order('created_at', { ascending: false });
+      setMeetings(data || []);
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+    }
+  };
+
   const handleFileUpload = (file: File, type: 'post' | 'activity' | 'gallery') => {
     if (file.size > 10 * 1024 * 1024) {
       alert('File size must be less than 10MB');
@@ -83,61 +127,166 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     reader.readAsDataURL(file);
   };
 
+  const deletePost = async (id: string) => {
+    if (!confirm('Delete this post?')) return;
+    try {
+      await supabase.from('posts').delete().eq('id', id);
+      toast.success('Post deleted');
+      fetchPosts();
+    } catch (error) {
+      toast.error('Error deleting post');
+    }
+  };
+
+  const deleteActivity = async (id: string) => {
+    if (!confirm('Delete this activity?')) return;
+    try {
+      await supabase.from('activities').delete().eq('id', id);
+      toast.success('Activity deleted');
+      fetchActivities();
+    } catch (error) {
+      toast.error('Error deleting activity');
+    }
+  };
+
+  const deleteMeeting = async (id: string) => {
+    if (!confirm('Delete this meeting?')) return;
+    try {
+      await supabase.from('meetings').delete().eq('id', id);
+      toast.success('Meeting deleted');
+      fetchMeetings();
+    } catch (error) {
+      toast.error('Error deleting meeting');
+    }
+  };
+
+  const editPost = (post: any) => {
+    setEditingPost(post);
+    setPostContent(post.content);
+    setPostFacebookUrl(post.facebook_url || '');
+    setPostInstagramUrl(post.instagram_url || '');
+    setPostTwitterUrl(post.twitter_url || '');
+    setPostPreview(post.image_url);
+    setPostFile(null);
+  };
+
+  const cancelEditPost = () => {
+    setEditingPost(null);
+    setPostContent('');
+    setPostFacebookUrl('');
+    setPostInstagramUrl('');
+    setPostTwitterUrl('');
+    setPostPreview(null);
+    setPostFile(null);
+  };
+
+  const editActivity = (activity: any) => {
+    setEditingActivity(activity);
+    setActivityTitle(activity.title);
+    setActivityType(activity.type);
+    setActivityStartDate(activity.start_date);
+    setActivityEndDate(activity.end_date || '');
+    setActivityLocation(activity.location);
+    setActivityDescription(activity.description);
+    setActivityCoordinator(activity.coordinator);
+    setActivityParticipants(activity.participants);
+    setActivityPreview(activity.image_url);
+    setActivityFile(null);
+  };
+
+  const cancelEditActivity = () => {
+    setEditingActivity(null);
+    setActivityTitle('');
+    setActivityType('');
+    setActivityStartDate('');
+    setActivityEndDate('');
+    setActivityLocation('');
+    setActivityDescription('');
+    setActivityCoordinator('');
+    setActivityParticipants('');
+    setActivityPreview(null);
+    setActivityFile(null);
+  };
+
+  const editMeeting = (meeting: any) => {
+    setEditingMeeting(meeting);
+    setMeetingTitle(meeting.title);
+    setMeetingDate(meeting.date);
+    setMeetingTime(meeting.time);
+    setMeetingOrganizer(meeting.organizer);
+    setMeetingLink(meeting.meeting_link);
+    setMeetingNumber(meeting.meeting_number);
+    setMeetingPassword(meeting.password);
+    setMeetingAgenda(meeting.agenda);
+    setMeetingExpectedAttendees((meeting.expected_attendees || []).join(', '));
+  };
+
+  const cancelEditMeeting = () => {
+    setEditingMeeting(null);
+    setMeetingTitle('');
+    setMeetingDate('');
+    setMeetingTime('');
+    setMeetingOrganizer('');
+    setMeetingLink('');
+    setMeetingNumber('');
+    setMeetingPassword('');
+    setMeetingAgenda('');
+    setMeetingExpectedAttendees('');
+  };
+
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!postContent.trim()) return;
 
-    // Check if Supabase is configured
     if (!isSupabaseReady || !supabase) {
-      toast.error('Database not configured. Please connect to Supabase first.');
+      toast.error('Database not configured.');
       return;
     }
 
     setLoading(true);
     try {
-      let imageUrl = null;
-      
+      let imageUrl = postPreview === 'video' ? editingPost?.image_url : null;
+
       if (postFile) {
-        // Convert file to data URL for persistent storage
         const reader = new FileReader();
         imageUrl = await new Promise((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(postFile);
         });
+      } else if (editingPost && !postPreview) {
+        imageUrl = editingPost.image_url;
       }
 
-      // Get current user session
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const postData = {
         content: postContent,
         image_url: imageUrl,
         facebook_url: postFacebookUrl || null,
         instagram_url: postInstagramUrl || null,
         twitter_url: postTwitterUrl || null,
-        user_id: session?.user?.id || null,
       };
 
-      const { error } = await supabase
-        .from('posts')
-        .insert([postData]);
+      if (editingPost) {
+        const { error } = await supabase.from('posts').update(postData).eq('id', editingPost.id);
+        if (error) throw error;
+        toast.success('Post updated!');
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { error } = await supabase.from('posts').insert([{ ...postData, user_id: session?.user?.id || null }]);
+        if (error) throw error;
+        toast.success('Post created!');
+      }
 
-      if (error) throw error;
-
-      // Reset form
       setPostContent('');
       setPostFile(null);
       setPostPreview(null);
       setPostFacebookUrl('');
       setPostInstagramUrl('');
       setPostTwitterUrl('');
-      toast.success('Post created successfully!');
-      
-      // Refresh the page to show the new post
-      window.location.reload();
+      setEditingPost(null);
+      fetchPosts();
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error('Error creating post: ' + (error as any).message);
+      console.error('Error:', error);
+      toast.error('Error: ' + (error as any).message);
     } finally {
       setLoading(false);
     }
@@ -147,28 +296,25 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     e.preventDefault();
     if (!activityTitle.trim() || !activityType.trim() || !activityStartDate) return;
 
-    // Check if Supabase is configured
     if (!isSupabaseReady || !supabase) {
-      toast.error('Database not configured. Please connect to Supabase first.');
+      toast.error('Database not configured.');
       return;
     }
 
     setLoading(true);
     try {
-      let imageUrl = null;
-      
+      let imageUrl = activityPreview === 'video' ? editingActivity?.image_url : null;
+
       if (activityFile) {
-        // Convert file to data URL for persistent storage
         const reader = new FileReader();
         imageUrl = await new Promise((resolve) => {
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(activityFile);
         });
+      } else if (editingActivity && !activityPreview) {
+        imageUrl = editingActivity.image_url;
       }
 
-      // Get current user session
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const activityData = {
         title: activityTitle,
         type: activityType,
@@ -179,16 +325,19 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
         coordinator: activityCoordinator,
         participants: activityParticipants,
         image_url: imageUrl,
-        user_id: session?.user?.id || null,
       };
 
-      const { error } = await supabase
-        .from('activities')
-        .insert([activityData]);
+      if (editingActivity) {
+        const { error } = await supabase.from('activities').update(activityData).eq('id', editingActivity.id);
+        if (error) throw error;
+        toast.success('Activity updated!');
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { error } = await supabase.from('activities').insert([{ ...activityData, user_id: session?.user?.id || null }]);
+        if (error) throw error;
+        toast.success('Activity created!');
+      }
 
-      if (error) throw error;
-
-      // Reset form
       setActivityTitle('');
       setActivityType('');
       setActivityStartDate('');
@@ -199,13 +348,11 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       setActivityParticipants('');
       setActivityFile(null);
       setActivityPreview(null);
-      toast.success('Activity created successfully!');
-      
-      // Refresh the page to show the new activity
-      window.location.reload();
+      setEditingActivity(null);
+      fetchActivities();
     } catch (error) {
-      console.error('Error creating activity:', error);
-      toast.error('Error creating activity: ' + (error as any).message);
+      console.error('Error:', error);
+      toast.error('Error: ' + (error as any).message);
     } finally {
       setLoading(false);
     }
@@ -216,14 +363,12 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
     if (!meetingTitle.trim() || !meetingDate || !meetingTime) return;
 
     if (!isSupabaseReady || !supabase) {
-      toast.error('Database not configured. Please connect to Supabase first.');
+      toast.error('Database not configured.');
       return;
     }
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
       const meetingData = {
         title: meetingTitle,
         date: meetingDate,
@@ -234,14 +379,18 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
         password: meetingPassword,
         agenda: meetingAgenda,
         expected_attendees: meetingExpectedAttendees ? meetingExpectedAttendees.split(',').map(a => a.trim()) : [],
-        user_id: session?.user?.id || null,
       };
 
-      const { error } = await supabase
-        .from('meetings')
-        .insert([meetingData]);
-
-      if (error) throw error;
+      if (editingMeeting) {
+        const { error } = await supabase.from('meetings').update(meetingData).eq('id', editingMeeting.id);
+        if (error) throw error;
+        toast.success('Meeting updated!');
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { error } = await supabase.from('meetings').insert([{ ...meetingData, user_id: session?.user?.id || null }]);
+        if (error) throw error;
+        toast.success('Meeting created!');
+      }
 
       setMeetingTitle('');
       setMeetingDate('');
@@ -252,11 +401,11 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
       setMeetingPassword('');
       setMeetingAgenda('');
       setMeetingExpectedAttendees('');
-      toast.success('Meeting created successfully!');
-      window.location.reload();
+      setEditingMeeting(null);
+      fetchMeetings();
     } catch (error) {
-      console.error('Error creating meeting:', error);
-      toast.error('Error creating meeting: ' + (error as any).message);
+      console.error('Error:', error);
+      toast.error('Error: ' + (error as any).message);
     } finally {
       setLoading(false);
     }
