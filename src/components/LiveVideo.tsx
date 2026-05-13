@@ -55,6 +55,14 @@ const LiveVideo: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (isLive && videoRef.current) {
+      console.log('Video element rendered, current srcObject:', videoRef.current.srcObject);
+      console.log('Video paused:', videoRef.current.paused);
+      console.log('Video readyState:', videoRef.current.readyState);
+    }
+  }, [isLive]);
+
   const checkDeviceSupport = async () => {
     const support = {
       hasCamera: false,
@@ -133,31 +141,15 @@ const LiveVideo: React.FC = () => {
     }
   };
 
-  const getMediaConstraints = () => {
-    // Progressive enhancement - start with basic constraints
-    const baseConstraints = {
-      video: true,
+  const getMediaConstraints = (): MediaStreamConstraints => {
+    return {
+      video: {
+        facingMode: 'user',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
       audio: true
     };
-
-    // Enhanced constraints for supported devices
-    if (deviceSupport.hasCamera && deviceSupport.hasMicrophone) {
-      return {
-        video: {
-          width: { min: 320, ideal: 640, max: 1280 },
-          height: { min: 240, ideal: 480, max: 720 },
-          frameRate: { min: 15, ideal: 24, max: 30 },
-          facingMode: 'user'
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
-    }
-
-    return baseConstraints;
   };
 
   const startStream = async () => {
@@ -187,45 +179,47 @@ const LiveVideo: React.FC = () => {
 
       streamRef.current = stream;
 
+      console.log('Stream obtained:', stream);
+      console.log('Video tracks:', stream.getVideoTracks());
+      console.log('Audio tracks:', stream.getAudioTracks());
+
       if (videoRef.current) {
+        console.log('Video ref exists, setting srcObject');
         videoRef.current.srcObject = stream;
+
+        // Ensure video element is visible and has proper dimensions
+        videoRef.current.style.display = 'block';
 
         // Wait for video to be ready before playing
         videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, starting playback');
-          const playPromise = videoRef.current?.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.warn('Auto-play failed:', error);
+          console.log('Video metadata loaded, videoHeight:', videoRef.current?.videoHeight, 'videoWidth:', videoRef.current?.videoWidth);
+          if (videoRef.current) {
+            videoRef.current.play().catch(error => {
+              console.error('Play failed after metadata:', error);
             });
           }
         };
 
-        // Fallback: try playing immediately
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.warn('Immediate play failed, waiting for metadata:', error);
-          });
-        }
+        // Try playing immediately
+        videoRef.current.play().catch(error => {
+          console.warn('Initial play attempt failed:', error);
+        });
+      } else {
+        console.error('Video ref is null!');
       }
 
-      // Get tracks before setting live state
+      // Get tracks
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
 
-      console.log('Video track enabled:', videoTrack?.enabled);
-      console.log('Audio track enabled:', audioTrack?.enabled);
+      console.log('Video track:', videoTrack);
+      console.log('Audio track:', audioTrack);
 
       setIsVideoEnabled(videoTrack ? videoTrack.enabled : false);
       setIsAudioEnabled(audioTrack ? audioTrack.enabled : false);
-
-      // Small delay to ensure everything is initialized
-      setTimeout(() => {
-        setIsLive(true);
-        setViewerCount(Math.floor(Math.random() * 50) + 10);
-        toast.success('Live stream started successfully!');
-      }, 100);
+      setIsLive(true);
+      setViewerCount(Math.floor(Math.random() * 50) + 10);
+      toast.success('Live stream started successfully!');
     } catch (error: any) {
       console.error('Error starting stream:', error);
       
@@ -392,17 +386,23 @@ const LiveVideo: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative">
           {/* Video Container */}
-          <div className="relative bg-black w-full" style={{ paddingBottom: '56.25%' }}>
-            {isLive ? (
+          <div
+            className="relative bg-black w-full overflow-hidden"
+            style={{
+              paddingBottom: '56.25%',
+              minHeight: '100%'
+            }}
+          >
+            {isLive && (
               <video
                 ref={videoRef}
                 className="absolute top-0 left-0 w-full h-full object-cover"
                 autoPlay
                 muted
                 playsInline
-                style={{ display: 'block', width: '100%', height: '100%' }}
               />
-            ) : (
+            )}
+            {!isLive && (
               <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900">
                 {cameraError ? (
                   <div className="text-center p-6">
