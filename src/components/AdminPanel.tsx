@@ -645,11 +645,84 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                 ) : (
                   <>
                     <Plus className="w-5 h-5 mr-2" />
-                    Create Post
+                    {editingPost ? 'Update Post' : 'Create Post'}
                   </>
                 )}
               </button>
+
+              {editingPost && (
+                <button
+                  type="button"
+                  onClick={cancelEditPost}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
+          )}
+
+          {/* Existing Posts List */}
+          {activeTab === 'post' && (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Existing Posts ({posts.length})</h3>
+              {posts.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">No posts yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {posts.map((post) => (
+                    <div key={post.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="flex items-start justify-between p-3 bg-gray-50">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{post.content || '(no content)'}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(post.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          <button
+                            onClick={() => editPost(post)}
+                            className="p-2 text-orange-600 hover:bg-orange-100 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => deletePost(post.id)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
+                            className="p-2 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                            title={expandedPost === post.id ? 'Collapse' : 'Expand'}
+                          >
+                            {expandedPost === post.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                      {expandedPost === post.id && (
+                        <div className="p-3 bg-white border-t border-gray-100">
+                          {post.image_url && (
+                            <div className="mb-2">
+                              <img src={post.image_url} alt="Post media" className="max-h-40 rounded" />
+                            </div>
+                          )}
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.content}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {post.facebook_url && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Facebook</span>}
+                            {post.instagram_url && <span className="text-xs bg-pink-100 text-pink-800 px-2 py-0.5 rounded">Instagram</span>}
+                            {post.twitter_url && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Twitter</span>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Activity Creation Form */}
@@ -832,11 +905,87 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                 ) : (
                   <>
                     <Plus className="w-5 h-5 mr-2" />
-                    Create Activity
+                    {editingActivity ? 'Update Activity' : 'Create Activity'}
                   </>
                 )}
               </button>
+
+              {editingActivity && (
+                <button
+                  type="button"
+                  onClick={cancelEditActivity}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
+          )}
+
+          {/* Existing Activities List */}
+          {activeTab === 'activity' && (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Existing Activities ({activities.length})</h3>
+              {activities.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">No activities yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {activities.map((activity) => (
+                    <div key={activity.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="flex items-start justify-between p-3 bg-gray-50">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              activity.type === 'campaign' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {activity.type}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {activity.location} • {new Date(activity.start_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          <button
+                            onClick={() => editActivity(activity)}
+                            className="p-2 text-orange-600 hover:bg-orange-100 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteActivity(activity.id)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setExpandedActivity(expandedActivity === activity.id ? null : activity.id)}
+                            className="p-2 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                            title={expandedActivity === activity.id ? 'Collapse' : 'Expand'}
+                          >
+                            {expandedActivity === activity.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                      {expandedActivity === activity.id && (
+                        <div className="p-3 bg-white border-t border-gray-100 text-sm space-y-1">
+                          {activity.image_url && (
+                            <img src={activity.image_url} alt={activity.title} className="max-h-40 rounded mb-2" />
+                          )}
+                          <p className="text-gray-700"><span className="font-medium">Date:</span> {new Date(activity.start_date).toLocaleDateString()}{activity.end_date ? ` - ${new Date(activity.end_date).toLocaleDateString()}` : ''}</p>
+                          <p className="text-gray-700"><span className="font-medium">Coordinator:</span> {activity.coordinator}</p>
+                          <p className="text-gray-700"><span className="font-medium">Participants:</span> {activity.participants}</p>
+                          <p className="text-gray-700 whitespace-pre-wrap"><span className="font-medium">Description:</span> {activity.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Meeting Creation Form */}
@@ -973,13 +1122,82 @@ export default function AdminPanel({ onClose }: AdminPanelProps) {
                 ) : (
                   <>
                     <Plus className="w-5 h-5 mr-2" />
-                    Create Meeting
+                    {editingMeeting ? 'Update Meeting' : 'Create Meeting'}
                   </>
                 )}
               </button>
+
+              {editingMeeting && (
+                <button
+                  type="button"
+                  onClick={cancelEditMeeting}
+                  className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
           )}
 
+          {/* Existing Meetings List */}
+          {activeTab === 'meeting' && (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Existing Meetings ({meetings.length})</h3>
+              {meetings.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">No meetings yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {meetings.map((meeting) => (
+                    <div key={meeting.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="flex items-start justify-between p-3 bg-gray-50">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{meeting.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(meeting.date).toLocaleDateString()} at {meeting.time}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          <button
+                            onClick={() => editMeeting(meeting)}
+                            className="p-2 text-orange-600 hover:bg-orange-100 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteMeeting(meeting.id)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setExpandedMeeting(expandedMeeting === meeting.id ? null : meeting.id)}
+                            className="p-2 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                            title={expandedMeeting === meeting.id ? 'Collapse' : 'Expand'}
+                          >
+                            {expandedMeeting === meeting.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                      {expandedMeeting === meeting.id && (
+                        <div className="p-3 bg-white border-t border-gray-100 text-sm space-y-1">
+                          <p className="text-gray-700"><span className="font-medium">Organizer:</span> {meeting.organizer}</p>
+                          <p className="text-gray-700"><span className="font-medium">Meeting Number:</span> {meeting.meeting_number}</p>
+                          <p className="text-gray-700"><span className="font-medium">Password:</span> {meeting.password}</p>
+                          <p className="text-gray-700 break-all"><span className="font-medium">Link:</span> {meeting.meeting_link}</p>
+                          <p className="text-gray-700 whitespace-pre-wrap"><span className="font-medium">Agenda:</span> {meeting.agenda}</p>
+                          {meeting.expected_attendees && meeting.expected_attendees.length > 0 && (
+                            <p className="text-gray-700"><span className="font-medium">Expected Attendees:</span> {meeting.expected_attendees.join(', ')}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {/* Gallery Item Form */}
           {activeTab === 'gallery' && (
             <form onSubmit={handleGallerySubmit} className="space-y-4">
